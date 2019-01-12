@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AudioUtilities.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
