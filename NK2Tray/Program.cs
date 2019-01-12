@@ -57,6 +57,12 @@ namespace NK2Tray
             trayMenu.MenuItems.Clear();
             trayMenu.MenuItems.Add("Exit", OnExit);
 
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                MenuItem faderMenu = new MenuItem(String.Format("Fader {0} - {1}", i, assignments[i].process));
+                trayMenu.MenuItems.Add(faderMenu);
+            }
+
             foreach (AudioSession session in AudioUtilities.GetAllSessions())
             {
                 if (session.Process != null)
@@ -66,17 +72,19 @@ namespace NK2Tray
                     Console.WriteLine(session.Process.MainWindowTitle);
                     Console.WriteLine("");
                     //String.Format("{0} - {1}", session.Process.ProcessName, session.Process.MainWindowTitle)
-                    MenuItem mi = new MenuItem(session.Process.ProcessName);
+                    //MenuItem mi = new MenuItem(session.Process.ProcessName);
+                    //mi.MenuItems.Add(session.Process.MainWindowTitle);
                     foreach (var i in Enumerable.Range(0, 8))
                     {
-                        MenuItem si = new MenuItem(String.Format("Fader {0}", i), AssignFader);
+                        MenuItem si = new MenuItem(session.Process.ProcessName, AssignFader);
                         si.Tag = new object[] { session.Process.ProcessName, session.Process.MainWindowTitle, session.Process.Id,  i };
-                        mi.MenuItems.Add(si);
+                        trayMenu.MenuItems[i+1].MenuItems.Add(si);
                     }
-                    trayMenu.MenuItems.Add(mi);
+
                 }
             }
             //Console.WriteLine(e);
+            
         }
 
         private void AssignFader(object sender, EventArgs e)
