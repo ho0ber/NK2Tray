@@ -27,7 +27,6 @@ namespace NK2Tray
         public static void Main() => Application.Run(new SysTrayApp());
 
         private NotifyIcon trayIcon;
-        private ContextMenu trayMenu;
         private MidiIn midiIn;
         public Assignment[] assignments = new Assignment[8];
 
@@ -35,7 +34,7 @@ namespace NK2Tray
         {
             trayIcon = new NotifyIcon();
             trayIcon.Text = "NK2 Tray";
-            trayIcon.Icon = new Icon(SystemIcons.Application, 40, 40);
+            trayIcon.Icon = new Icon(Properties.Resources.nk2tray, 40, 40);
 
             trayIcon.ContextMenu = new ContextMenu();
             trayIcon.ContextMenu.Popup += OnPopup;
