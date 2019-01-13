@@ -39,9 +39,6 @@ namespace NK2Tray
         private NotifyIcon trayIcon;
         private MidiIn midiIn;
         public Assignment[] assignments = new Assignment[8];
-        //CoreAudioDevice defaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
-        private MMDevice dev;
-
 
         public SysTrayApp()
         {
@@ -58,36 +55,6 @@ namespace NK2Tray
             // dump all audio devices
             //Console.WriteLine("Current Volume:" + defaultPlaybackDevice.Volume);
             //VolTest();
-        }
-
-        private void SetMasterVol(float vol)
-        {
-            //try
-            //{
-
-            //Instantiate an Enumerator to find audio devices
-            NAudio.CoreAudioApi.MMDeviceEnumerator MMDE = new NAudio.CoreAudioApi.MMDeviceEnumerator();
-            //Get all the devices, no matter what condition or status
-            //NAudio.CoreAudioApi.MMDeviceCollection DevCol = MMDE.EnumerateAudioEndPoints(NAudio.CoreAudioApi.DataFlow.All, NAudio.CoreAudioApi.DeviceState.All);
-
-            dev = MMDE.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-
-            //Set at maximum volume
-            dev.AudioEndpointVolume.MasterVolumeLevel = (vol*0.96f) - 96;
-
-            //Get its audio volume
-            System.Diagnostics.Debug.Print("Volume of " + dev.FriendlyName + " is " + dev.AudioEndpointVolume.MasterVolumeLevel.ToString());
-
-            //Mute it
-            //mastervol.AudioEndpointVolume.Mute = true;
-            //System.Diagnostics.Debug.Print(mastervol.FriendlyName + " is muted");
-
-            //}
-            //catch (Exception ex)
-            //{
-            //    //Do something with exception when an audio endpoint could not be muted
-            //    System.Diagnostics.Debug.Print(dev.FriendlyName + " could not be changed");
-            //}
         }
 
         private void OnPopup(object sender, EventArgs e)
@@ -132,7 +99,7 @@ namespace NK2Tray
             foreach (var i in Enumerable.Range(0, 8))
             {
                 MenuItem si = new MenuItem("Master Volume", AssignFader);
-                si.Tag = new object[] { "", "", -1, i };
+                si.Tag = new object[] { "Master Volume", "", -1, i };
                 trayMenu.MenuItems[i].MenuItems.Add(si);
             }
             // Add the exit at the end
@@ -248,7 +215,7 @@ namespace NK2Tray
                         {
                             float vol = me.ControllerValue / 127f * 100f;
                             Console.WriteLine(String.Format("Setting master volume to: {0} {1}", vol, me.ControllerValue));
-                            SetMasterVol(vol);
+                            //SetMasterVol(vol);
                             //defaultPlaybackDevice.Volume = Math.Floor(me.ControllerValue / 128f * 100f);
                             //Console.Write("changed vol");
                         }
