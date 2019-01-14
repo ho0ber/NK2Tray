@@ -52,7 +52,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assignment.cs" />
+    <Compile Include="ControlSurface.cs" />
     <Compile Include="IconExtractor.cs" />
+    <Compile Include="NanoKontrol2.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
