@@ -104,6 +104,8 @@ namespace NK2Tray
                     }
                 }
             }
+
+            trayMenu.MenuItems.Add("Exit", OnExit);
         }
 
         private void GenerateMenuItems(ref ContextMenu trayMenu, AudioSessionControl session)
