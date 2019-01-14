@@ -25,7 +25,6 @@
             fader = f;
             value = 0;
         }
-
     }
 
     public enum ControlSurfaceDisplayType
@@ -37,11 +36,13 @@
     public class ControlSurfaceDisplay
     {
         public ControlSurfaceDisplayType displayType;
-        bool state;
+        public int fader;
+        public bool state;
 
-        public ControlSurfaceDisplay(ControlSurfaceDisplayType dt, bool s)
+        public ControlSurfaceDisplay(ControlSurfaceDisplayType dt, int f, bool s)
         {
             displayType = dt;
+            fader = f;
             state = s;
         }
     }

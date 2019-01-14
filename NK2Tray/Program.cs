@@ -16,6 +16,7 @@ namespace NK2Tray
 
         private NotifyIcon trayIcon;
         private MidiIn midiIn;
+        private MidiOut midiOut;
         public Assignment[] assignments = new Assignment[8];
         private MMDevice device;
         public AudioEndpointVolume deviceVolume;
@@ -29,7 +30,15 @@ namespace NK2Tray
             trayIcon.ContextMenu = new ContextMenu();
             trayIcon.ContextMenu.Popup += OnPopup;
 
+            var deviceEnumerator = new MMDeviceEnumerator();
+            device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            deviceVolume = device.AudioEndpointVolume;
+
             trayIcon.Visible = true;
+
+            InitMidi();
+            assignments[7] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, 7, true));
             ListenForMidi();
         }
 
@@ -84,13 +93,25 @@ namespace NK2Tray
             var sessions = device.AudioSessionManager.Sessions;
             if (sessions != null)
             {
+                ISet<String> seen = new HashSet<String>();
+                ISet<String> duplicates = new HashSet<String>();
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    var session = sessions[i];
+                    Process process = Process.GetProcessById((int)session.GetProcessID);
+                    if (seen.Contains(process.ProcessName))
+                        duplicates.Add(process.ProcessName);
+                    else
+                        seen.Add(process.ProcessName);
+                }
+
                 for (int i = 0; i < sessions.Count; i++)
                 {
                     var session = sessions[i];
                     if (session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
                         DumpProps(session);
-                        GenerateMenuItems(ref trayMenu, session);
+                        GenerateMenuItems(ref trayMenu, session, duplicates);
                         break;
                     }
                 }
@@ -100,7 +121,7 @@ namespace NK2Tray
                     if (!session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
                         DumpProps(session);
-                        GenerateMenuItems(ref trayMenu, session);
+                        GenerateMenuItems(ref trayMenu, session, duplicates);
                     }
                 }
             }
@@ -108,7 +129,7 @@ namespace NK2Tray
             trayMenu.MenuItems.Add("Exit", OnExit);
         }
 
-        private void GenerateMenuItems(ref ContextMenu trayMenu, AudioSessionControl session)
+        private void GenerateMenuItems(ref ContextMenu trayMenu, AudioSessionControl session, ISet<String> duplicates)
         {
             Process process = Process.GetProcessById((int)session.GetProcessID);
             foreach (var i in Enumerable.Range(0, 8))
@@ -116,10 +137,10 @@ namespace NK2Tray
                 String sessionTitle;
                 if (session.IsSystemSoundsSession)
                     sessionTitle = "System Sounds";
-                else if (process.MainWindowTitle == "")
-                    sessionTitle = process.ProcessName;
+                else if (duplicates.Contains(process.ProcessName) && process.MainWindowTitle != "")
+                    sessionTitle = String.Format("{0} ({1})", process.ProcessName, string.Concat(process.MainWindowTitle.Take(15)));
                 else
-                    sessionTitle = process.MainWindowTitle;
+                    sessionTitle = process.ProcessName;
 
                 MenuItem si = new MenuItem(sessionTitle, AssignFader);
                 // Tag is unpacked in AssignFader - using this to plumb through
@@ -150,6 +171,7 @@ namespace NK2Tray
             AudioSessionControl audsess = (AudioSessionControl)((object[])((MenuItem)sender).Tag)[6];
 
             Console.WriteLine(String.Format("Assigning fader {0} to {1} - {2}", fader, proc, name));
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, fader, true));
             assignments[fader] = new Assignment(proc, name, pid, aType, sid, iid, audsess);
         }
         
@@ -163,12 +185,47 @@ namespace NK2Tray
 
         private void OnExit(object sender, EventArgs e) => Application.Exit();
 
+        public void InitMidi()
+        {
+            FindMidiIn();
+            FindMidiOut();
+
+            //Reset all of the lights
+            foreach (var i in Enumerable.Range(0, 128))
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+        }
+
         public void ListenForMidi()
         {
-            midiIn = new MidiIn(0);
             midiIn.MessageReceived += midiIn_MessageReceived;
             midiIn.ErrorReceived += midiIn_ErrorReceived;
             midiIn.Start();
+        }
+
+        public void FindMidiIn()
+        {
+            for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+            {
+                if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains("nano"))
+                {
+                    midiIn = new MidiIn(i);
+                    Console.WriteLine(MidiIn.DeviceInfo(i).ProductName);
+                    break;
+                }  
+            }
+        }
+
+        public void FindMidiOut()
+        {
+            for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+            {
+                if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains("nano"))
+                {
+                    midiOut = new MidiOut(i);
+                    Console.WriteLine(MidiOut.DeviceInfo(i).ProductName);
+                    break;
+                }
+            }
         }
 
         public void midiIn_ErrorReceived(object sender, MidiInMessageEventArgs e)
@@ -224,7 +281,7 @@ namespace NK2Tray
                     muted = !deviceVolume.Mute;
                     deviceVolume.Mute = muted;
                 }
-                NanoKontrol2.Respond(new ControlSurfaceDisplay(ControlSurfaceDisplayType.MuteState, muted));
+                NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MuteState, cse.fader, muted));
             }
         }
     }
