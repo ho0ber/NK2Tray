@@ -3,7 +3,8 @@
     public enum ControlSurfaceEventType
     {
         FaderVolumeChange,
-        FaderVolumeMute
+        FaderVolumeMute,
+        Information
     }
 
     public class ControlSurfaceEvent

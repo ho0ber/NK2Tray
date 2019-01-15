@@ -27,6 +27,12 @@ namespace NK2Tray
                 else
                     return null;
 
+            if (64 <= controller && controller < 72)
+                if (me.ControllerValue == 127)
+                    return new ControlSurfaceEvent(ControlSurfaceEventType.Information, controller - 64);
+                else
+                    return null;
+
             Console.WriteLine(String.Format("controller: {0}  value: {1}", controller, me.ControllerValue));
 
             return null;

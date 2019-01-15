@@ -15,9 +15,9 @@ namespace NK2Tray
         public static void Main() => Application.Run(new SysTrayApp());
 
         private NotifyIcon trayIcon;
-        private MidiIn midiIn;
-        private MidiOut midiOut;
-        public Assignment[] assignments = new Assignment[8];
+        public MidiIn midiIn;
+        public MidiOut midiOut;
+        public List<Assignment> assignments = new List<Assignment>();
         private MMDevice device;
         public AudioEndpointVolume deviceVolume;
 
@@ -36,10 +36,19 @@ namespace NK2Tray
 
             trayIcon.Visible = true;
 
+            
+
             InitMidi();
+            InitAssignments();
+            ListenForMidi();
+        }
+
+        private void InitAssignments()
+        {
+            foreach (var i in Enumerable.Range(0, 8))
+                assignments.Add(new Assignment());
             assignments[7] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, 7, true));
-            ListenForMidi();
         }
 
         private bool ProcessExists(uint processId)
@@ -57,7 +66,7 @@ namespace NK2Tray
 
         private void DumpProps(AudioSessionControl session)
         {
-            Process process = Process.GetProcessById((int)session.GetProcessID);
+
             Console.WriteLine("=================================");
             Console.WriteLine(String.Format("DisplayName = {0}", session.DisplayName));
             Console.WriteLine(String.Format("AudioMeterInformation = {0}", session.AudioMeterInformation.PeakValues));
@@ -68,7 +77,8 @@ namespace NK2Tray
             Console.WriteLine(String.Format("SimpleAudioVolume = {0}", session.SimpleAudioVolume.Volume));
             Console.WriteLine(String.Format("GetProcessID = {0}", session.GetProcessID));
             Console.WriteLine(String.Format("State = {0}", session.State));
-            Console.WriteLine(String.Format("lbl = {0}", process.MainWindowTitle != "" ? process.MainWindowTitle : process.ProcessName));
+            //Process process = Process.GetProcessById((int)session.GetProcessID);
+            //Console.WriteLine(String.Format("lbl = {0}", process.MainWindowTitle != "" ? process.MainWindowTitle : process.ProcessName));
         }
 
         private void OnPopup(object sender, EventArgs e)
@@ -79,7 +89,7 @@ namespace NK2Tray
             // Make all of the fader menu items
             foreach (var i in Enumerable.Range(0, 8))
             {
-                MenuItem faderMenu = new MenuItem(String.Format("Fader {0} - {1}", i, assignments[i].processName));
+                MenuItem faderMenu = new MenuItem(String.Format("Fader {0} - {1}", i, assignments[i].assigned ? assignments[i].processName : ""));
                 trayMenu.MenuItems.Add(faderMenu);
             }
 
@@ -161,18 +171,9 @@ namespace NK2Tray
 
         private void AssignFader(object sender, EventArgs e)
         {
-            String proc = (String)((object[])((MenuItem)sender).Tag)[0];
-            String name = (String)((object[])((MenuItem)sender).Tag)[1];
-            int pid = (int)((object[])((MenuItem)sender).Tag)[2];
-            int fader = (int)((object[])((MenuItem)sender).Tag)[3];
-            AssignmentType aType = pid >= 0 ? AssignmentType.Process : AssignmentType.Master;
-            String sid = (String)((object[])((MenuItem)sender).Tag)[4];
-            String iid = (String)((object[])((MenuItem)sender).Tag)[5];
-            AudioSessionControl audsess = (AudioSessionControl)((object[])((MenuItem)sender).Tag)[6];
-
-            Console.WriteLine(String.Format("Assigning fader {0} to {1} - {2}", fader, proc, name));
-            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, fader, true));
-            assignments[fader] = new Assignment(proc, name, pid, aType, sid, iid, audsess);
+            var assignment = new Assignment(sender);
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, assignment.fader, true));
+            assignments[assignment.fader] = assignment;
         }
         
         protected override void OnLoad(EventArgs e)
@@ -248,8 +249,21 @@ namespace NK2Tray
                 case ControlSurfaceEventType.FaderVolumeMute:
                     MuteApplication(cse);
                     break;
+                case ControlSurfaceEventType.Information:
+                    GetAssignmentInformation(cse);
+                    break;
                 default:
                     break;
+            }
+        }
+
+        public void GetAssignmentInformation(ControlSurfaceEvent cse)
+        {
+            if (assignments[cse.fader].processName != null)
+            {
+                Assignment assignment = assignments[cse.fader];
+                if (assignment.aType == AssignmentType.Process)
+                    DumpProps(assignment.audioSession);
             }
         }
 
