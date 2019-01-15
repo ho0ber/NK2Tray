@@ -41,15 +41,11 @@ namespace NK2Tray
         public static void Respond(ref MidiOut midiOut, ControlSurfaceDisplay csd)
         {
             if (csd.displayType == ControlSurfaceDisplayType.MuteState)
-            {
-                //Console.WriteLine(String.Format("{0} {1} {2} {3}", 0, 1, (csd.fader + 48), csd.state ? 127 : 0));
                 midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(csd.fader + 48), csd.state ? 127 : 0).GetAsShortMessage());
-            }
             else if (csd.displayType == ControlSurfaceDisplayType.AssignedState)
-            {
-                //Console.WriteLine(String.Format("{0} {1} {2} {3}", 0, 1, (csd.fader), csd.state ? 127 : 0));
                 midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(csd.fader + 32), csd.state ? 127 : 0).GetAsShortMessage());
-            }
+            else if (csd.displayType == ControlSurfaceDisplayType.ErrorState)
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(csd.fader + 64), csd.state ? 127 : 0).GetAsShortMessage());
         }
     }
 }

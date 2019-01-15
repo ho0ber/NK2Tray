@@ -31,7 +31,8 @@
     public enum ControlSurfaceDisplayType
     {
         AssignedState,
-        MuteState
+        MuteState,
+        ErrorState
     }
 
     public class ControlSurfaceDisplay

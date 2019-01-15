@@ -1,6 +1,8 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace NK2Tray
@@ -52,13 +54,51 @@ namespace NK2Tray
             assigned = true;
         }
 
-        public bool isAlive()
+        public bool CheckHealth()
         {
+            if (!assigned)
+                return false;
+
+            if (!IsAlive())
+                return HealSession();
+
+            return true;
+        }
+
+        public bool IsAlive()
+        {
+            if (!assigned)
+                return false;
+
+            if (aType == AssignmentType.Master)
+                return true;
+
             if (audioSession.State == AudioSessionState.AudioSessionStateExpired)
             {
                 return false;
             }
 
+            return true;
+        }
+
+        public bool HealSession()
+        {
+            var deviceEnumerator = new MMDeviceEnumerator();
+            var device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            var sessions = device.AudioSessionManager.Sessions;
+            if (sessions != null)
+            {
+                foreach (var i in Enumerable.Range(0, sessions.Count))
+                {
+                    var session = sessions[i];
+                    var process = Process.GetProcessById((int)session.GetProcessID);
+                    if (process.ProcessName == processName)
+                    {
+                        audioSession = session;
+                        return true;
+                    }
+                }
+            }
             return false;
         }
     }

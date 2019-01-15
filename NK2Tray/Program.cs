@@ -36,8 +36,6 @@ namespace NK2Tray
 
             trayIcon.Visible = true;
 
-            
-
             InitMidi();
             InitAssignments();
             ListenForMidi();
@@ -94,9 +92,9 @@ namespace NK2Tray
             }
 
             // Add audio devices to each fader menu items
-            var deviceEnumerator = new MMDeviceEnumerator();
-            device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            deviceVolume = device.AudioEndpointVolume;
+            //var deviceEnumerator = new MMDeviceEnumerator();
+            //device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            //deviceVolume = device.AudioEndpointVolume;
 
             GenerateDeviceMenuItems(ref trayMenu);
 
@@ -241,7 +239,10 @@ namespace NK2Tray
             if (cse == null)
                 return;
 
-            switch(cse.eventType)
+            if (assignments[cse.fader].assigned && !assignments[cse.fader].IsAlive())
+                NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, cse.fader, true));
+
+            switch (cse.eventType)
             {
                 case ControlSurfaceEventType.FaderVolumeChange:
                     ChangeApplicationVolume(cse);
@@ -264,6 +265,10 @@ namespace NK2Tray
                 Assignment assignment = assignments[cse.fader];
                 if (assignment.aType == AssignmentType.Process)
                     DumpProps(assignment.audioSession);
+
+                if (assignment.CheckHealth())
+                    NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, cse.fader, false));
+
             }
         }
 
