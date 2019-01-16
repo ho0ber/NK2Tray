@@ -3,6 +3,11 @@ A simple system tray utility to control the Windows Audio Mixer with a Korg nano
 
 (A rewrite of [nk2-audio](https://github.com/ho0ber/nk2-audio))
 
+## Disclaimer
+I'm not a Windows developer. There's a lot in here that's far from best practices, and I welcome you to help improve the code. This project is an attempt to significantly improve the stability and extensibility of a project that was first written in AutoHotkey, so even my most clumsy attempts are already much better than the old codebase. Please reach out to me if you have experience fighting with Windows in code and want to take an active role in this project.
+
+Also, I'm pretty sure I have to release this under the Ms-PL license if I want it to be open source, because that's what [NAudio](https://github.com/naudio/NAudio) is licensed under.
+
 ## Project Goals
 * Improved stability over nk2-audio by means of better maintainability
 * Reduced conflicts with games by not using AutoHotkey (which is rejected by some anti-cheat measures)
