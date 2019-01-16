@@ -15,9 +15,10 @@ A simple system tray utility to control the Windows Audio Mixer with a Korg nano
 - [x] Configurable Master(device) volume and system sounds support
 - [x] Midi feedback to light controls upon activation
 - [ ] On the fly binding of sessions using "S" buttons
-= [ ] Media button support
-- [ ] Persistence of configuration across sessions (restoring on reopening NK2Tray)
-- [ ] Support for processes changing (closing/reopening application) and retaining a handle to its session
+- [ ] Media button support
+- [x] Persistence of configuration across sessions (restoring on reopening NK2Tray)
+- [ ] Multi-session differentiation in persistence (2 instances of Discord, for example)
+- [x] Support for processes changing (closing/reopening application) and retaining a handle to its session
 - [ ] Detection of midi device connect/disconnect
 - [ ] Selectable input/output midi devices (defaulting to nano)
 - [ ] Support for common amazon clones of nanokontrol2
