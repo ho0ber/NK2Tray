@@ -6,6 +6,9 @@ using NAudio.Midi;
 using System.Collections.Generic;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
+using NAudio.CoreAudioApi.Interfaces;
+using NK2Tray.Properties;
+using System.Configuration;
 
 namespace NK2Tray
 {
@@ -30,23 +33,193 @@ namespace NK2Tray
             trayIcon.ContextMenu = new ContextMenu();
             trayIcon.ContextMenu.Popup += OnPopup;
 
-            var deviceEnumerator = new MMDeviceEnumerator();
-            device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            deviceVolume = device.AudioEndpointVolume;
+            UpdateDevice();
+            //var deviceEnumerator = new MMDeviceEnumerator();
+            //device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            //device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
+            //deviceVolume = device.AudioEndpointVolume;
 
             trayIcon.Visible = true;
 
             InitMidi();
-            InitAssignments();
+
+            foreach (var i in Enumerable.Range(0, 8))
+                assignments.Add(new Assignment());
+
+            if (GetAppSettings("1") != null)
+                LoadAssignments();
+            else
+                InitAssignments();
+
             ListenForMidi();
         }
 
+        private void OnSessionCreated(object sender, IAudioSessionControl newSession)
+        {
+            Console.WriteLine("OnSessionCreated");
+            AudioSessionControl newAudioSession = new AudioSessionControl(newSession);
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                if (assignments[i].assigned && !assignments[i].IsAlive())
+                    if (assignments[i].sessionIdentifier == newAudioSession.GetSessionIdentifier)
+                    {
+                        assignments[i].UpdateSession(newAudioSession);
+                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
+                    }
+            }
+            //NAudioEventCallbacks callbacks = new NAudioEventCallbacks();
+            //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
+            //audioSession.RegisterEventClient(callbacks);
+
+        }
+
+        public void SaveAssignments()
+        {
+            Console.WriteLine("Saving assignments");
+
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                if (assignments[i].assigned)
+                {
+                    if (assignments[i].aType == AssignmentType.Master)
+                        AddOrUpdateAppSettings(i.ToString(), "__MASTER__");
+                    else
+                        AddOrUpdateAppSettings(i.ToString(), assignments[i].sessionIdentifier);
+                }
+                else
+                    AddOrUpdateAppSettings(i.ToString(), "");
+            }
+        }
+
+        public void LoadAssignments()
+        {
+            Console.WriteLine("Loading assignments: " + GetAppSettings("assignments"));
+            UpdateDevice();
+
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                //assignments.Add(new Assignment());
+                Console.WriteLine("Getting setting: " + i.ToString());
+                var ident = GetAppSettings(i.ToString());
+                Console.WriteLine("Got setting: " + ident);
+                if (ident != null)
+                {
+                    if (ident == "__MASTER__")
+                    {
+                        Console.WriteLine(String.Format("Fader {0} is {1} (master)", i, ident));
+                        assignments[i] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
+                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
+                        Console.WriteLine("Assigned!");
+                    }
+                    else if (ident.Length > 0)
+                    {
+                        Console.WriteLine(String.Format("Fader {0} is {1} (process)", i, ident));
+                        var matchingSession = FindSession(ident);
+                        if (matchingSession != null)
+                        {
+                            assignments[i] = new Assignment(matchingSession, i);
+                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
+                            Console.WriteLine("Assigned!");
+                        }
+                        else
+                        {
+                            assignments[i] = new Assignment(ident, i);
+                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
+                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, true));
+                            Console.WriteLine("Assigned!");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine(String.Format("Fader {0} is {1} (nothing)", i, ident));
+                        assignments[i] = new Assignment();
+                        Console.WriteLine("Assigned!");
+                    }
+                }
+            }
+        }
+
+        public static void AddOrUpdateAppSettings(string key, string value)
+        {
+            try
+            {
+                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var settings = configFile.AppSettings.Settings;
+                if (settings[key] == null)
+                {
+                    settings.Add(key, value);
+                }
+                else
+                {
+                    settings[key].Value = value;
+                }
+                configFile.Save(ConfigurationSaveMode.Modified);
+                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
+            }
+            catch (ConfigurationErrorsException)
+            {
+                Console.WriteLine("Error writing app settings");
+            }
+        }
+
+        public static string GetAppSettings(string key)
+        {
+            try
+            {
+                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                var settings = configFile.AppSettings.Settings;
+                if (settings[key] != null)
+                    return settings[key].Value;
+                else
+                    return null;
+            }
+            catch
+            {
+                Console.WriteLine("Error getting app settings"); 
+            }
+            return null;
+        }
+
+        public AudioSessionControl FindSession(String sessionIdentifier)
+        {
+            var sessions = device.AudioSessionManager.Sessions;
+            if (sessions != null)
+            {
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    if (sessions[i].GetSessionIdentifier == sessionIdentifier)
+                        return sessions[i];
+                }
+            }
+            return null;
+        }
+
+            /*
+            public class NAudioEventCallbacks : IAudioSessionEventsHandler
+            {
+                public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
+
+                public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
+
+                public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
+
+                public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
+
+                public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
+
+                public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
+
+                public void OnVolumeChanged(float volume, bool isMuted) { Console.WriteLine("OnVolumeChanged"); }
+            }
+            */
+
         private void InitAssignments()
         {
-            foreach (var i in Enumerable.Range(0, 8))
-                assignments.Add(new Assignment());
+            //foreach (var i in Enumerable.Range(0, 8))
+            //    assignments.Add(new Assignment());
             assignments[7] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, 7, true));
+            SaveAssignments();
         }
 
         private bool ProcessExists(uint processId)
@@ -79,6 +252,16 @@ namespace NK2Tray
             //Console.WriteLine(String.Format("lbl = {0}", process.MainWindowTitle != "" ? process.MainWindowTitle : process.ProcessName));
         }
 
+        private void UpdateDevice()
+        {
+            // Add audio devices to each fader menu items
+            var deviceEnumerator = new MMDeviceEnumerator();
+
+            device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
+            deviceVolume = device.AudioEndpointVolume;
+        }
+
         private void OnPopup(object sender, EventArgs e)
         {
             ContextMenu trayMenu = (ContextMenu)sender;
@@ -91,11 +274,7 @@ namespace NK2Tray
                 trayMenu.MenuItems.Add(faderMenu);
             }
 
-            // Add audio devices to each fader menu items
-            //var deviceEnumerator = new MMDeviceEnumerator();
-            //device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            //deviceVolume = device.AudioEndpointVolume;
-
+            UpdateDevice();
             GenerateDeviceMenuItems(ref trayMenu);
 
             var sessions = device.AudioSessionManager.Sessions;
@@ -118,7 +297,7 @@ namespace NK2Tray
                     var session = sessions[i];
                     if (session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
-                        DumpProps(session);
+                        //DumpProps(session);
                         GenerateMenuItems(ref trayMenu, session, duplicates);
                         break;
                     }
@@ -128,7 +307,7 @@ namespace NK2Tray
                     var session = sessions[i];
                     if (!session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
-                        DumpProps(session);
+                        //DumpProps(session);
                         GenerateMenuItems(ref trayMenu, session, duplicates);
                     }
                 }
@@ -172,6 +351,7 @@ namespace NK2Tray
             var assignment = new Assignment(sender);
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, assignment.fader, true));
             assignments[assignment.fader] = assignment;
+            SaveAssignments();
         }
         
         protected override void OnLoad(EventArgs e)
@@ -182,7 +362,12 @@ namespace NK2Tray
             base.OnLoad(e);
         }
 
-        private void OnExit(object sender, EventArgs e) => Application.Exit();
+        private void OnExit(object sender, EventArgs e)
+        {
+            foreach (var i in Enumerable.Range(0, 128))
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+            Application.Exit();
+        }
 
         public void InitMidi()
         {
@@ -260,7 +445,7 @@ namespace NK2Tray
 
         public void GetAssignmentInformation(ControlSurfaceEvent cse)
         {
-            if (assignments[cse.fader].processName != null)
+            if (assignments[cse.fader].session_alive)
             {
                 Assignment assignment = assignments[cse.fader];
                 if (assignment.aType == AssignmentType.Process)
@@ -274,7 +459,7 @@ namespace NK2Tray
 
         public void ChangeApplicationVolume(ControlSurfaceEvent cse)
         {
-            if (assignments[cse.fader].processName != null)
+            if (assignments[cse.fader].session_alive)
             {
                 Assignment assignment = assignments[cse.fader];
                 if (assignment.aType == AssignmentType.Process)

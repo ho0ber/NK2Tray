@@ -22,5 +22,7 @@ namespace NK2Tray.Properties {
                 return defaultInstance;
             }
         }
+
+        public string SavedAssignments { get; internal set; }
     }
 }

@@ -39,6 +39,36 @@ namespace NK2Tray
             sessionIdentifier = (String)((object[])((MenuItem)sender).Tag)[4];
             instanceIdentifier = (String)((object[])((MenuItem)sender).Tag)[5];
             audioSession = (AudioSessionControl)((object[])((MenuItem)sender).Tag)[6];
+            session_alive = true;
+            assigned = true;
+        }
+
+        public Assignment(AudioSessionControl session, int f)
+        {
+            var process = Process.GetProcessById((int)session.GetProcessID);
+            processName = process.ProcessName;
+            windowName = process.MainWindowTitle;
+            pid = (int)session.GetProcessID;
+            fader = f;
+            aType = AssignmentType.Process;
+            sessionIdentifier = session.GetSessionIdentifier;
+            instanceIdentifier = session.GetSessionInstanceIdentifier;
+            audioSession = session;
+            session_alive = true;
+            assigned = true;
+        }
+
+        public Assignment(String ident, int f)
+        {
+            processName = "";
+            windowName = "";
+            pid = -1;
+            fader = f;
+            aType = AssignmentType.Process;
+            sessionIdentifier = ident;
+            instanceIdentifier = "";
+            audioSession = null;
+            session_alive = false;
             assigned = true;
         }
 
@@ -51,6 +81,7 @@ namespace NK2Tray
             sessionIdentifier = sid;
             instanceIdentifier = iid;
             audioSession = audsess;
+            session_alive = true;
             assigned = true;
         }
 
@@ -67,7 +98,8 @@ namespace NK2Tray
 
         public bool IsAlive()
         {
-            if (!assigned)
+            //Dump();
+            if (!assigned || !session_alive)
                 return false;
 
             if (aType == AssignmentType.Master)
@@ -75,10 +107,17 @@ namespace NK2Tray
 
             if (audioSession.State == AudioSessionState.AudioSessionStateExpired)
             {
+                session_alive = false;
                 return false;
             }
 
             return true;
+        }
+
+        public void UpdateSession(AudioSessionControl session)
+        {
+            audioSession = session;
+            session_alive = true;
         }
 
         public bool HealSession()
@@ -91,8 +130,7 @@ namespace NK2Tray
                 foreach (var i in Enumerable.Range(0, sessions.Count))
                 {
                     var session = sessions[i];
-                    var process = Process.GetProcessById((int)session.GetProcessID);
-                    if (process.ProcessName == processName)
+                    if (session.GetSessionIdentifier == sessionIdentifier)
                     {
                         audioSession = session;
                         return true;
@@ -100,6 +138,14 @@ namespace NK2Tray
                 }
             }
             return false;
+        }
+
+        public void Dump()
+        {
+            Console.WriteLine(processName);
+            Console.WriteLine(sessionIdentifier);
+            Console.WriteLine(assigned);
+            Console.WriteLine(session_alive);
         }
     }
 }
