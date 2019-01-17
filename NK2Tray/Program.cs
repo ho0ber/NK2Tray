@@ -9,6 +9,7 @@ using System.Diagnostics;
 using NAudio.CoreAudioApi.Interfaces;
 using NK2Tray.Properties;
 using System.Configuration;
+using System.Runtime.InteropServices;
 
 namespace NK2Tray
 {
@@ -416,6 +417,11 @@ namespace NK2Tray
             //Reset all of the lights
             foreach (var i in Enumerable.Range(0, 128))
                 midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaPlay, true));
+            //NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaStop, true)); // Broken for now?
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaPrevious, true));
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaNext, true));
         }
 
         public void ListenForMidi()
@@ -463,7 +469,7 @@ namespace NK2Tray
             if (cse == null)
                 return;
 
-            if (assignments[cse.fader].assigned && !assignments[cse.fader].IsAlive())
+            if (cse.fader > 0 && assignments[cse.fader].assigned && !assignments[cse.fader].IsAlive())
                 NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, cse.fader, true));
 
             switch (cse.eventType)
@@ -479,6 +485,21 @@ namespace NK2Tray
                     break;
                 case ControlSurfaceEventType.Assignment:
                     AssignForegroundSession(cse);
+                    break;
+                case ControlSurfaceEventType.MediaNext:
+                    MediaTools.Next();
+                    break;
+                case ControlSurfaceEventType.MediaPlay:
+                    MediaTools.Play();
+                    break;
+                case ControlSurfaceEventType.MediaPrevious:
+                    MediaTools.Previous();
+                    break;
+                case ControlSurfaceEventType.MediaRecord:
+                    // Maybe mute/unmute microphone?
+                    break;
+                case ControlSurfaceEventType.MediaStop:
+                    MediaTools.Stop();
                     break;
                 default:
                     break;

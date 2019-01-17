@@ -5,7 +5,12 @@
         FaderVolumeChange,
         FaderVolumeMute,
         Information,
-        Assignment
+        Assignment,
+        MediaPlay,
+        MediaStop,
+        MediaPrevious,
+        MediaNext,
+        MediaRecord
     }
 
     public class ControlSurfaceEvent
@@ -27,13 +32,25 @@
             fader = f;
             value = 0;
         }
+
+        public ControlSurfaceEvent(ControlSurfaceEventType et)
+        {
+            eventType = et;
+            fader = -1;
+            value = 0;
+        }
     }
 
     public enum ControlSurfaceDisplayType
     {
         AssignedState,
         MuteState,
-        ErrorState
+        ErrorState,
+        MediaPlay,
+        MediaStop,
+        MediaPrevious,
+        MediaNext,
+        MediaRecord
     }
 
     public class ControlSurfaceDisplay
@@ -46,6 +63,13 @@
         {
             displayType = dt;
             fader = f;
+            state = s;
+        }
+
+        public ControlSurfaceDisplay(ControlSurfaceDisplayType dt, bool s)
+        {
+            displayType = dt;
+            fader = -1;
             state = s;
         }
     }

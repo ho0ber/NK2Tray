@@ -62,6 +62,7 @@
     <Compile Include="Assignment.cs" />
     <Compile Include="ControlSurface.cs" />
     <Compile Include="IconExtractor.cs" />
+    <Compile Include="MediaTools.cs" />
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
