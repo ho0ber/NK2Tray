@@ -9,6 +9,8 @@ To download the latest version of NK2Tray, go to this project's [**Releases page
 ## Getting Involved
 To help test or contribute, I encourage you to join our discord: https://discord.gg/BtVTYxpTh
 
+Current development work is being tracked in this repository's [Github Project](https://github.com/ho0ber/NK2Tray/projects/1).
+
 ## Disclaimer
 I'm not a Windows developer. There's a lot in here that's far from best practices, and I welcome you to help improve the code. This project is an attempt to significantly improve the stability and extensibility of a project that was first written in AutoHotkey, so even my most clumsy attempts are already much better than the old codebase. Please reach out to me if you have experience fighting with Windows in code and want to take an active role in this project.
 
