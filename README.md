@@ -3,6 +3,9 @@ A simple system tray utility to control the Windows Audio Mixer with a Korg nano
 
 (A rewrite of [nk2-audio](https://github.com/ho0ber/nk2-audio))
 
+## Download
+To download the latest version of NK2Tray, go to this project's [**Releases page**](https://github.com/ho0ber/NK2Tray/releases).
+
 ## Getting Involved
 To help test or contribute, I encourage you to join our discord: https://discord.gg/BtVTYxpTh
 
