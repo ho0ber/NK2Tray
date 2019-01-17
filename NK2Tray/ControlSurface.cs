@@ -4,7 +4,8 @@
     {
         FaderVolumeChange,
         FaderVolumeMute,
-        Information
+        Information,
+        Assignment
     }
 
     public class ControlSurfaceEvent

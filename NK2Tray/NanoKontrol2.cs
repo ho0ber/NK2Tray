@@ -21,6 +21,12 @@ namespace NK2Tray
             if (0 <= controller && controller < 8)
                 return new ControlSurfaceEvent(ControlSurfaceEventType.FaderVolumeChange, controller, me.ControllerValue / 127f);
 
+            if (32 <= controller && controller < 40)
+                if (me.ControllerValue == 127)
+                    return new ControlSurfaceEvent(ControlSurfaceEventType.Assignment, controller - 32);
+                else
+                    return null;
+
             if (48 <= controller && controller < 56)
                 if (me.ControllerValue == 127)
                     return new ControlSurfaceEvent(ControlSurfaceEventType.FaderVolumeMute, controller - 48);

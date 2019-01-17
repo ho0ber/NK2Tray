@@ -194,29 +194,41 @@ namespace NK2Tray
             return null;
         }
 
-            /*
-            public class NAudioEventCallbacks : IAudioSessionEventsHandler
+        public AudioSessionControl FindSession(int pid)
+        {
+            var sessions = device.AudioSessionManager.Sessions;
+            if (sessions != null)
             {
-                public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
-
-                public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
-
-                public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
-
-                public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
-
-                public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
-
-                public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
-
-                public void OnVolumeChanged(float volume, bool isMuted) { Console.WriteLine("OnVolumeChanged"); }
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    if (sessions[i].GetProcessID == pid)
+                        return sessions[i];
+                }
             }
-            */
+            return null;
+        }
+        /*
+        // Saving these for later because I'll definitely need them.
+        public class NAudioEventCallbacks : IAudioSessionEventsHandler
+        {
+            public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
+
+            public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
+
+            public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
+
+            public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
+
+            public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
+
+            public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
+
+            public void OnVolumeChanged(float volume, bool isMuted) { Console.WriteLine("OnVolumeChanged"); }
+        }
+        */
 
         private void InitAssignments()
         {
-            //foreach (var i in Enumerable.Range(0, 8))
-            //    assignments.Add(new Assignment());
             assignments[7] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, 7, true));
             SaveAssignments();
@@ -313,6 +325,8 @@ namespace NK2Tray
                 }
             }
 
+            GenerateUnassignMenuItems(ref trayMenu);
+
             trayMenu.MenuItems.Add("Exit", OnExit);
         }
 
@@ -346,6 +360,16 @@ namespace NK2Tray
             }
         }
 
+        private void GenerateUnassignMenuItems(ref ContextMenu trayMenu)
+        {
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                MenuItem si = new MenuItem("UNASSIGN", UnassignFader);
+                si.Tag = new object[] { i };
+                trayMenu.MenuItems[i].MenuItems.Add(si);
+            }
+        }
+
         private void AssignFader(object sender, EventArgs e)
         {
             var assignment = new Assignment(sender);
@@ -353,7 +377,22 @@ namespace NK2Tray
             assignments[assignment.fader] = assignment;
             SaveAssignments();
         }
-        
+
+        private void UnassignFader(object sender, EventArgs e)
+        {
+            int fader = (int)((object[])((MenuItem)sender).Tag)[0];
+            UnassignFader(fader);
+        }
+
+        private void UnassignFader(int fader)
+        {
+            Console.WriteLine("Unassigning fader " + fader);
+            var assignment = new Assignment();
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, fader, false));
+            assignments[fader] = assignment;
+            SaveAssignments();
+        }
+
         protected override void OnLoad(EventArgs e)
         {
             Visible = false; // Hide form window.
@@ -438,8 +477,31 @@ namespace NK2Tray
                 case ControlSurfaceEventType.Information:
                     GetAssignmentInformation(cse);
                     break;
+                case ControlSurfaceEventType.Assignment:
+                    AssignForegroundSession(cse);
+                    break;
                 default:
                     break;
+            }
+        }
+
+        public void AssignForegroundSession(ControlSurfaceEvent cse)
+        {
+            if (assignments[cse.fader].assigned)
+            {
+                UnassignFader(cse.fader);
+            }
+            else
+            {
+                var pid = WindowTools.GetForegroundPID();
+                UpdateDevice();
+                var matchingSession = FindSession(pid);
+                if (matchingSession != null)
+                {
+                    assignments[cse.fader] = new Assignment(matchingSession, cse.fader);
+                    NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, cse.fader, true));
+                    SaveAssignments();
+                }
             }
         }
 
