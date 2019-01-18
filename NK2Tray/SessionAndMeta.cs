@@ -1,6 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace NK2Tray
@@ -40,12 +41,14 @@ namespace NK2Tray
             foreach (var ident in sessionsByIdent.Keys.ToList())
             {
                 Console.WriteLine("Working on " + ident);
-                var ordered = sessionsByIdent[ident].OrderBy(i => i.GetSessionInstanceIdentifier.Split('|').Last().Split('b').Last()).ToList();
+                //var ordered = sessionsByIdent[ident].OrderBy(i => i.GetSessionInstanceIdentifier.Split('|').Last().Split('b').Last()).ToList();
+                var ordered = sessionsByIdent[ident].OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
                 bool dup = ordered.Count > 1;
                 for (int i = 0; i < ordered.Count; i++)
                 {
                     outSessions.Add(new SessionAndMeta(ordered[i], dup, i));
-                    Console.WriteLine("" + i + ordered[i].GetSessionInstanceIdentifier);
+                    var process = Process.GetProcessById((int)ordered[i].GetProcessID); 
+                    Console.WriteLine("" + i + " - " + ordered[i].GetSessionInstanceIdentifier + " - " + process.MainWindowTitle + " - " + (int)process.MainWindowHandle);
                 }
             }
 
