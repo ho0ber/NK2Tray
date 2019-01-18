@@ -57,6 +57,8 @@ namespace NK2Tray
 
         private void OnSessionCreated(object sender, IAudioSessionControl newSession)
         {
+            LoadAssignments();
+            /*
             Console.WriteLine("OnSessionCreated");
             AudioSessionControl newAudioSession = new AudioSessionControl(newSession);
             var matchingAssignments = new List<Assignment>();
@@ -82,7 +84,7 @@ namespace NK2Tray
             //NAudioEventCallbacks callbacks = new NAudioEventCallbacks();
             //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
             //audioSession.RegisterEventClient(callbacks);
-
+            */
         }
 
         public void SaveAssignments()
@@ -126,6 +128,7 @@ namespace NK2Tray
                         Console.WriteLine(String.Format("Fader {0} is {1} (master)", i, ident));
                         assignments[i] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
                         NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
+                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
                         Console.WriteLine("Assigned!");
                     }
                     else if (ident.Length > 0)
@@ -136,6 +139,7 @@ namespace NK2Tray
                         {
                             assignments[i] = new Assignment(matchingSession, i);
                             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
+                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
                             Console.WriteLine("Assigned!");
                         }
                         else
