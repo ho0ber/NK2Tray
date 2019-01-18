@@ -59,14 +59,25 @@ namespace NK2Tray
         {
             Console.WriteLine("OnSessionCreated");
             AudioSessionControl newAudioSession = new AudioSessionControl(newSession);
+            var matchingAssignments = new List<Assignment>();
             foreach (var i in Enumerable.Range(0, 8))
             {
                 if (assignments[i].assigned && !assignments[i].IsAlive())
                     if (assignments[i].sessionIdentifier == newAudioSession.GetSessionIdentifier)
                     {
-                        assignments[i].UpdateSession(newAudioSession);
-                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
+                        matchingAssignments.Add(assignments[i]);
                     }
+            }
+
+            if (matchingAssignments.Count > 0)
+            {
+                matchingAssignments = matchingAssignments.OrderBy(i => i.instanceNumber).ToList();
+                foreach (var assignment in matchingAssignments)
+                {
+                    assignment.UpdateSession(newAudioSession);
+                    NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, assignment.fader, false));
+                    break;
+                }
             }
             //NAudioEventCallbacks callbacks = new NAudioEventCallbacks();
             //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
@@ -83,9 +94,9 @@ namespace NK2Tray
                 if (assignments[i].assigned)
                 {
                     if (assignments[i].aType == AssignmentType.Master)
-                        AddOrUpdateAppSettings(i.ToString(), "__MASTER__");
+                        AddOrUpdateAppSettings(i.ToString(), "__MASTER__;0");
                     else
-                        AddOrUpdateAppSettings(i.ToString(), assignments[i].sessionIdentifier);
+                        AddOrUpdateAppSettings(i.ToString(), String.Format("{0};{1}", assignments[i].sessionIdentifier, assignments[i].instanceNumber));
                 }
                 else
                     AddOrUpdateAppSettings(i.ToString(), "");
@@ -101,7 +112,12 @@ namespace NK2Tray
             {
                 //assignments.Add(new Assignment());
                 Console.WriteLine("Getting setting: " + i.ToString());
-                var ident = GetAppSettings(i.ToString());
+                var identAndInstance = GetAppSettings(i.ToString()).Split(';');
+                int instance = 0;
+                var ident = identAndInstance[0];
+                if (identAndInstance.Count() > 1)
+                    instance = int.Parse(identAndInstance[1]);
+                
                 Console.WriteLine("Got setting: " + ident);
                 if (ident != null)
                 {
@@ -115,7 +131,7 @@ namespace NK2Tray
                     else if (ident.Length > 0)
                     {
                         Console.WriteLine(String.Format("Fader {0} is {1} (process)", i, ident));
-                        var matchingSession = FindSession(ident);
+                        var matchingSession = FindSession(ident, instance);
                         if (matchingSession != null)
                         {
                             assignments[i] = new Assignment(matchingSession, i);
@@ -181,15 +197,17 @@ namespace NK2Tray
             return null;
         }
 
-        public AudioSessionControl FindSession(String sessionIdentifier)
+        public AudioSessionControl FindSession(String sessionIdentifier, int instanceNumber)
         {
             var sessions = device.AudioSessionManager.Sessions;
             if (sessions != null)
             {
-                for (int i = 0; i < sessions.Count; i++)
+                var sessionsAndMeta = SessionProcessor.GetSessionMeta(ref sessions);
+                for (int i = 0; i < sessionsAndMeta.Count; i++)
                 {
-                    if (sessions[i].GetSessionIdentifier == sessionIdentifier)
-                        return sessions[i];
+                    var sessionMeta = sessionsAndMeta[i];
+                    if (sessionMeta.session.GetSessionIdentifier == sessionIdentifier && sessionMeta.instanceNumber == instanceNumber)
+                        return sessionMeta.session;
                 }
             }
             return null;
@@ -261,8 +279,10 @@ namespace NK2Tray
             Console.WriteLine(String.Format("SimpleAudioVolume = {0}", session.SimpleAudioVolume.Volume));
             Console.WriteLine(String.Format("GetProcessID = {0}", session.GetProcessID));
             Console.WriteLine(String.Format("State = {0}", session.State));
-            //Process process = Process.GetProcessById((int)session.GetProcessID);
-            //Console.WriteLine(String.Format("lbl = {0}", process.MainWindowTitle != "" ? process.MainWindowTitle : process.ProcessName));
+            Process process = Process.GetProcessById((int)session.GetProcessID);
+            Console.WriteLine(String.Format("lbl = {0}", process.MainWindowTitle != "" ? process.MainWindowTitle : process.ProcessName));
+            var instanceID = Int32.Parse(session.GetSessionInstanceIdentifier.Split('|').Last().Split('b').Last());
+            Console.WriteLine(instanceID);
         }
 
         private void UpdateDevice()
@@ -274,6 +294,7 @@ namespace NK2Tray
             device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
             deviceVolume = device.AudioEndpointVolume;
         }
+
 
         private void OnPopup(object sender, EventArgs e)
         {
@@ -293,35 +314,27 @@ namespace NK2Tray
             var sessions = device.AudioSessionManager.Sessions;
             if (sessions != null)
             {
-                ISet<String> seen = new HashSet<String>();
-                ISet<String> duplicates = new HashSet<String>();
-                for (int i = 0; i < sessions.Count; i++)
-                {
-                    var session = sessions[i];
-                    Process process = Process.GetProcessById((int)session.GetProcessID);
-                    if (seen.Contains(process.ProcessName))
-                        duplicates.Add(process.ProcessName);
-                    else
-                        seen.Add(process.ProcessName);
-                }
+                var sessionsAndMeta = SessionProcessor.GetSessionMeta(ref sessions);
 
-                for (int i = 0; i < sessions.Count; i++)
+                for (int i = 0; i < sessionsAndMeta.Count; i++)
                 {
-                    var session = sessions[i];
+                    var sessionMeta = sessionsAndMeta[i];
+                    var session = sessionMeta.session;
                     if (session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
                         //DumpProps(session);
-                        GenerateMenuItems(ref trayMenu, session, duplicates);
+                        GenerateMenuItems(ref trayMenu, sessionMeta);
                         break;
                     }
                 }
                 for (int i = 0; i < sessions.Count; i++)
                 {
-                    var session = sessions[i];
+                    var sessionMeta = sessionsAndMeta[i];
+                    var session = sessionMeta.session;
                     if (!session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                     {
                         //DumpProps(session);
-                        GenerateMenuItems(ref trayMenu, session, duplicates);
+                        GenerateMenuItems(ref trayMenu, sessionMeta);
                     }
                 }
             }
@@ -331,22 +344,23 @@ namespace NK2Tray
             trayMenu.MenuItems.Add("Exit", OnExit);
         }
 
-        private void GenerateMenuItems(ref ContextMenu trayMenu, AudioSessionControl session, ISet<String> duplicates)
+        private void GenerateMenuItems(ref ContextMenu trayMenu, SessionAndMeta sessionMeta)
         {
+            var session = sessionMeta.session;
             Process process = Process.GetProcessById((int)session.GetProcessID);
             foreach (var i in Enumerable.Range(0, 8))
             {
                 String sessionTitle;
                 if (session.IsSystemSoundsSession)
                     sessionTitle = "System Sounds";
-                else if (duplicates.Contains(process.ProcessName) && process.MainWindowTitle != "")
+                else if (sessionMeta.duplicate && process.MainWindowTitle != "")
                     sessionTitle = String.Format("{0} ({1})", process.ProcessName, string.Concat(process.MainWindowTitle.Take(15)));
                 else
                     sessionTitle = process.ProcessName;
 
                 MenuItem si = new MenuItem(sessionTitle, AssignFader);
                 // Tag is unpacked in AssignFader - using this to plumb through
-                si.Tag = new object[] { process.ProcessName, process.MainWindowTitle, (int)session.GetProcessID, i, session.GetSessionIdentifier, session.GetSessionInstanceIdentifier, session };
+                si.Tag = new object[] { sessionMeta, i};
                 trayMenu.MenuItems[i].MenuItems.Add(si);
             }
         }
@@ -356,7 +370,7 @@ namespace NK2Tray
             foreach (var i in Enumerable.Range(0, 8))
             {
                 MenuItem si = new MenuItem("Master Volume", AssignFader);
-                si.Tag = new object[] { "Master Volume", "", -1, i, "", "", null };
+                si.Tag = new object[] { i };
                 trayMenu.MenuItems[i].MenuItems.Add(si);
             }
         }

@@ -21,6 +21,7 @@ namespace NK2Tray
         public int fader;
         public String sessionIdentifier;
         public String instanceIdentifier;
+        public int instanceNumber;
         public AssignmentType aType;
         public AudioSessionControl audioSession;
         public bool assigned = false;
@@ -31,16 +32,38 @@ namespace NK2Tray
         public Assignment(object sender)
         {
             //Assignment from MenuItem Tag
-            processName = (String)((object[])((MenuItem)sender).Tag)[0];
-            windowName = (String)((object[])((MenuItem)sender).Tag)[1];
-            pid = (int)((object[])((MenuItem)sender).Tag)[2];
-            fader = (int)((object[])((MenuItem)sender).Tag)[3];
-            aType = pid >= 0 ? AssignmentType.Process : AssignmentType.Master;
-            sessionIdentifier = (String)((object[])((MenuItem)sender).Tag)[4];
-            instanceIdentifier = (String)((object[])((MenuItem)sender).Tag)[5];
-            audioSession = (AudioSessionControl)((object[])((MenuItem)sender).Tag)[6];
-            session_alive = true;
-            assigned = true;
+            if (((object[])((MenuItem)sender).Tag).Count() == 1)
+            {
+                processName = "Master Volume";
+                windowName = "";
+                pid = -1;
+                fader = (int)((object[])((MenuItem)sender).Tag)[0];
+                aType = AssignmentType.Master;
+                sessionIdentifier = "";
+                instanceIdentifier = "";
+                instanceNumber = 0;
+                audioSession = null;
+                session_alive = true;
+                assigned = true;
+            }
+            else if (((object[])((MenuItem)sender).Tag).Count() == 2)
+            {
+                SessionAndMeta sessionMeta = (SessionAndMeta)((object[])((MenuItem)sender).Tag)[0];
+                fader = (int)((object[])((MenuItem)sender).Tag)[1];
+                audioSession = sessionMeta.session;
+                pid = (int)audioSession.GetProcessID;
+                Process process = Process.GetProcessById(pid);
+
+                processName = process.ProcessName;
+                windowName = process.MainWindowTitle;
+
+                aType = pid >= 0 ? AssignmentType.Process : AssignmentType.Master;
+                sessionIdentifier = audioSession.GetSessionIdentifier;
+                instanceIdentifier = audioSession.GetSessionInstanceIdentifier;
+                instanceNumber = sessionMeta.instanceNumber;
+                session_alive = true;
+                assigned = true;
+            }
         }
 
         public Assignment(AudioSessionControl session, int f)
@@ -53,6 +76,7 @@ namespace NK2Tray
             aType = AssignmentType.Process;
             sessionIdentifier = session.GetSessionIdentifier;
             instanceIdentifier = session.GetSessionInstanceIdentifier;
+            instanceNumber = 0;
             audioSession = session;
             session_alive = true;
             assigned = true;
@@ -67,6 +91,7 @@ namespace NK2Tray
             aType = AssignmentType.Process;
             sessionIdentifier = ident;
             instanceIdentifier = "";
+            instanceNumber = 0;
             audioSession = null;
             session_alive = false;
             assigned = true;
@@ -80,6 +105,7 @@ namespace NK2Tray
             aType = at;
             sessionIdentifier = sid;
             instanceIdentifier = iid;
+            instanceNumber = 0;
             audioSession = audsess;
             session_alive = true;
             assigned = true;
