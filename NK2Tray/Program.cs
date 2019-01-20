@@ -27,6 +27,7 @@ namespace NK2Tray
 
         public SysTrayApp()
         {
+            Console.WriteLine($@"NK2 Tray {DateTime.Now}");
             trayIcon = new NotifyIcon();
             trayIcon.Text = "NK2 Tray";
             trayIcon.Icon = new Icon(Properties.Resources.nk2tray, 40, 40);
@@ -35,14 +36,11 @@ namespace NK2Tray
             trayIcon.ContextMenu.Popup += OnPopup;
 
             UpdateDevice();
-            //var deviceEnumerator = new MMDeviceEnumerator();
-            //device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            //device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
-            //deviceVolume = device.AudioEndpointVolume;
 
             trayIcon.Visible = true;
 
             InitMidi();
+            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
 
             foreach (var i in Enumerable.Range(0, 8))
                 assignments.Add(new Assignment());
@@ -53,6 +51,14 @@ namespace NK2Tray
                 InitAssignments();
 
             ListenForMidi();
+        }
+
+        private void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
+        {
+            Console.WriteLine(e.ExceptionObject.ToString());
+            ResetAllLights();
+            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, 7, true));
+            Environment.Exit(1);
         }
 
         private void OnSessionCreated(object sender, IAudioSessionControl newSession)
@@ -422,8 +428,7 @@ namespace NK2Tray
 
         private void OnExit(object sender, EventArgs e)
         {
-            foreach (var i in Enumerable.Range(0, 128))
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+            ResetAllLights();
             Application.Exit();
         }
 
@@ -433,13 +438,18 @@ namespace NK2Tray
             FindMidiOut();
 
             //Reset all of the lights
-            foreach (var i in Enumerable.Range(0, 128))
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+            ResetAllLights();
 
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaPlay, true));
             //NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaStop, true)); // Broken for now?
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaPrevious, true));
             NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MediaNext, true));
+        }
+
+        public void ResetAllLights()
+        {
+            foreach (var i in Enumerable.Range(0, 128))
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
         }
 
         public void ListenForMidi()
@@ -514,6 +524,7 @@ namespace NK2Tray
                     MediaTools.Previous();
                     break;
                 case ControlSurfaceEventType.MediaRecord:
+                    throw new Exception("Kaboom");
                     // Maybe mute/unmute microphone?
                     break;
                 case ControlSurfaceEventType.MediaStop:
