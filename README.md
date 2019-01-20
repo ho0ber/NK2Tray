@@ -30,7 +30,7 @@ Also, I'm pretty sure I have to release this under the Ms-PL license if I want i
 - [x] On the fly binding of sessions using "S" buttons
 - [x] Media button support
 - [x] Persistence of configuration across sessions (restoring on reopening NK2Tray)
-- [ ] Multi-session differentiation in persistence (2 instances of Discord, for example)
+- [x] Multi-session differentiation in persistence (2 instances of Discord, for example)
 - [x] Support for processes changing (closing/reopening application) and retaining a handle to its session
 - [ ] Detection of midi device connect/disconnect
 - [ ] Selectable input/output midi devices (defaulting to nano)
