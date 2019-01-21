@@ -25,17 +25,21 @@ namespace NK2Tray
         public SysTrayApp()
         {
             Console.WriteLine($@"NK2 Tray {DateTime.Now}");
-            trayIcon = new NotifyIcon();
-            trayIcon.Text = "NK2 Tray";
-            trayIcon.Icon = new Icon(Properties.Resources.nk2tray, 40, 40);
+            trayIcon = new NotifyIcon
+            {
+                Text = "NK2 Tray",
+                Icon = new Icon(Properties.Resources.nk2tray, 40, 40),
 
-            trayIcon.ContextMenu = new ContextMenu();
+                ContextMenu = new ContextMenu()
+            };
             trayIcon.ContextMenu.Popup += OnPopup;
 
             trayIcon.Visible = true;
 
             audioDevice = new AudioDevice();
-            midiDevice = new MidiDevice("nano");
+            midiDevice = new MidiDevice("nano", audioDevice);
+            audioDevice.midiDevice = midiDevice;
+
             System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
         }
 
@@ -53,7 +57,7 @@ namespace NK2Tray
             trayMenu.MenuItems.Clear();
 
             var mixerSessions = audioDevice.GetMixerSessions();
-            var masterMixerSession = new MixerSession("Master", SessionType.Master, AudioDevice.GetDeviceVolumeObject());
+            var masterMixerSession = new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject());
 
             foreach (var fader in midiDevice.faders)
             {
@@ -88,38 +92,15 @@ namespace NK2Tray
             var fader = (Fader)((object[])((MenuItem)sender).Tag)[0];
             var mixerSession = (MixerSession)((object[])((MenuItem)sender).Tag)[1];
             fader.Assign(mixerSession);
+            midiDevice.SaveAssignments();
         }
 
         private void UnassignFader(object sender, EventArgs e)
         {
             var fader = (Fader)((object[])((MenuItem)sender).Tag)[0];
             fader.Unassign();
+            midiDevice.SaveAssignments();
         }
-
-        /*
-        private void AssignFader(object sender, EventArgs e)
-        {
-            var assignment = new Assignment(sender);
-            //NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, assignment.fader, true));
-            assignments[assignment.fader] = assignment;
-            SaveAssignments();
-        }
-
-        private void UnassignFader(object sender, EventArgs e)
-        {
-            int fader = (int)((object[])((MenuItem)sender).Tag)[0];
-            UnassignFader(fader);
-        }
-
-        private void UnassignFader(int fader)
-        {
-            Console.WriteLine("Unassigning fader " + fader);
-            var assignment = new Assignment();
-            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, fader, false));
-            assignments[fader] = assignment;
-            SaveAssignments();
-        }
-        */
 
         protected override void OnLoad(EventArgs e)
         {

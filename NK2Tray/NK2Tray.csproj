@@ -61,18 +61,15 @@
   <ItemGroup>
     <Compile Include="AudioDevice.cs" />
     <Compile Include="Button.cs" />
-    <Compile Include="ControlSurface.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
     <Compile Include="MidiDevice.cs" />
     <Compile Include="MixerSession.cs" />
-    <Compile Include="NanoKontrol2.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SessionAndMeta.cs" />
     <Compile Include="WindowTools.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

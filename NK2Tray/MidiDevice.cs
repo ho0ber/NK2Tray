@@ -1,6 +1,7 @@
 ﻿using NAudio.Midi;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,10 +28,13 @@ namespace NK2Tray
         public List<Fader> faders;
         public List<Button> buttons;
 
+        public AudioDevice audioDevice;
+
         public string searchString = "";
 
-        public MidiDevice(string search)
+        public MidiDevice(string search, AudioDevice audioDev)
         {
+            audioDevice = audioDev;
             searchString = search;
             FindMidiIn();
             FindMidiOut();
@@ -83,14 +87,10 @@ namespace NK2Tray
         public void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
             foreach (var fader in faders)
-            {
                 fader.HandleEvent(e);
-            }
 
             foreach (var button in buttons)
-            {
                 button.HandleEvent(e);
-            }
         }
 
         public void ResetAllLights()
@@ -104,7 +104,7 @@ namespace NK2Tray
             faders = new List<Fader>();
             foreach (var i in Enumerable.Range(0, 8))
             {
-                Fader fader = new Fader(ref midiOut, i, 0, 32, 48, 64);
+                Fader fader = new Fader(this, i, 0, 32, 48, 64);
                 fader.ResetLights();
                 faders.Add(fader);
             }
@@ -122,79 +122,57 @@ namespace NK2Tray
 
         public void LoadAssignments()
         {
-            faders.Last().Assign(new MixerSession("Master", SessionType.Master, AudioDevice.GetDeviceVolumeObject()));
-        }
-        /*
-        public void SaveAssignments()
-        {
-            Console.WriteLine("Saving assignments");
+            bool foundAssignments = false;
 
             foreach (var fader in faders)
             {
-                if (fader.assignment.assigned)
-                {
-                    if (fader.assignment.aType == AssignmentType.Master)
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__;0");
-                    else
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), String.Format("{0};{1}", fader.assignment.sessionIdentifier, fader.assignment.instanceNumber));
-                }
-                else
-                    AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
-            }
-        }
-
-        public void LoadAssignments()
-        {
-            Console.WriteLine("Loading assignments: " + GetAppSettings("assignments"));
-            UpdateDevice();
-
-            foreach (var fader in faders)
-            {
-                //assignments.Add(new Assignment());
-                Console.WriteLine("Getting setting: " + i.ToString());
-                var identAndInstance = GetAppSettings(i.ToString()).Split(';');
-                int instance = 0;
-                var ident = identAndInstance[0];
-                if (identAndInstance.Count() > 1)
-                    instance = int.Parse(identAndInstance[1]);
+                Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
+                var ident = GetAppSettings(fader.faderNumber.ToString());
 
                 Console.WriteLine("Got setting: " + ident);
                 if (ident != null)
                 {
                     if (ident == "__MASTER__")
                     {
-                        Console.WriteLine(String.Format("Fader {0} is {1} (master)", i, ident));
-                        assignments[i] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
-                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
-                        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
-                        Console.WriteLine("Assigned!");
+                        foundAssignments = true;
+                        fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
                     }
                     else if (ident.Length > 0)
                     {
-                        Console.WriteLine(String.Format("Fader {0} is {1} (process)", i, ident));
-                        var matchingSession = FindSession(ident, instance);
+                        foundAssignments = true;
+                        var matchingSession = audioDevice.FindMixerSessions(ident);
                         if (matchingSession != null)
-                        {
-                            assignments[i] = new Assignment(matchingSession, i);
-                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
-                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, false));
-                            Console.WriteLine("Assigned!");
-                        }
+                            fader.Assign(matchingSession);
                         else
-                        {
-                            assignments[i] = new Assignment(ident, i);
-                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, i, true));
-                            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, i, true));
-                            Console.WriteLine("Assigned!");
-                        }
+                            fader.AssignInactive(ident);
                     }
                     else
                     {
-                        Console.WriteLine(String.Format("Fader {0} is {1} (nothing)", i, ident));
-                        assignments[i] = new Assignment();
-                        Console.WriteLine("Assigned!");
+                        fader.Unassign();
                     }
                 }
+            }
+
+            if (!foundAssignments)
+            {
+                faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                SaveAssignments();
+            }
+        }
+
+        public void SaveAssignments()
+        {
+            foreach (var fader in faders)
+            {
+                if (fader.assigned)
+                {
+                    if (fader.assignment.sessionType == SessionType.Master)
+                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                    else
+                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
+                }
+                else
+                    AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
             }
         }
 
@@ -238,13 +216,5 @@ namespace NK2Tray
             }
             return null;
         }
-
-        /*
-        private void InitAssignments()
-        {
-            assignments[7] = new Assignment("Master Volume", "", -1, AssignmentType.Master, "", "", null);
-            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, 7, true));
-            SaveAssignments();
-        }*/
     }
 }

@@ -46,7 +46,7 @@ namespace NK2Tray
 
             ControlChangeEvent me = (ControlChangeEvent)e.MidiEvent;
 
-            if (me.Channel != channel || me.ControllerValue != 127)
+            if (me.Channel != channel || me.ControllerValue != 127) // Only on correct channel and button-down (127)
                 return false;
 
             int c = (int)me.Controller;

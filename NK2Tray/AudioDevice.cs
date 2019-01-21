@@ -11,13 +11,9 @@ namespace NK2Tray
 {
     public class AudioDevice
     {
+        public MidiDevice midiDevice;
         private MMDevice device;
         private AudioEndpointVolume deviceVolume;
-
-        public AudioDevice()
-        {
-
-        }
 
         private void UpdateDevice()
         {
@@ -29,20 +25,22 @@ namespace NK2Tray
             deviceVolume = device.AudioEndpointVolume;
         }
 
-        public static AudioEndpointVolume GetDeviceVolumeObject()
+        public AudioEndpointVolume GetDeviceVolumeObject()
         {
-            var deviceEnumerator = new MMDeviceEnumerator();
-            var transientDev = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            return transientDev.AudioEndpointVolume;
+            // Used to handle "COM object that has been separated from its underlying RCW cannot be used" issue.
+            UpdateDevice();
+            return deviceVolume;
         }
 
         private void OnSessionCreated(object sender, IAudioSessionControl newSession)
         {
-            //LoadAssignments();
+            Console.WriteLine("OnSessionCreated");
+            midiDevice.LoadAssignments();
+
+            // These correspond with the below events handlers
             //NAudioEventCallbacks callbacks = new NAudioEventCallbacks();
             //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
             //audioSession.RegisterEventClient(callbacks);
-
         }
 
         /*
@@ -73,20 +71,20 @@ namespace NK2Tray
             UpdateDevice();
             var sessions = device.AudioSessionManager.Sessions;
 
-            Console.WriteLine("Getting sessions grouped by ident");
             for (int i = 0; i < sessions.Count; i++)
             {
                 var session = sessions[i];
-                if (!sessionsByIdent.ContainsKey(session.GetSessionIdentifier))
-                    sessionsByIdent[session.GetSessionIdentifier] = new List<AudioSessionControl>();
-                sessionsByIdent[session.GetSessionIdentifier].Add(session);
-            }
-            Console.WriteLine("Done!");
+                if (session.State != AudioSessionState.AudioSessionStateExpired)
+                {
+                    if (!sessionsByIdent.ContainsKey(session.GetSessionIdentifier))
+                        sessionsByIdent[session.GetSessionIdentifier] = new List<AudioSessionControl>();
 
-            Console.WriteLine("Building MixerSession for each");
+                    sessionsByIdent[session.GetSessionIdentifier].Add(session);
+                }
+            }
+
             foreach (var ident in sessionsByIdent.Keys.ToList())
             {
-                Console.WriteLine("Working on " + ident);
                 var ordered = sessionsByIdent[ident].OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
 
                 bool dup = ordered.Count > 1;
@@ -104,42 +102,35 @@ namespace NK2Tray
                     sessionType = SessionType.Application;
                 }
 
-                var mixerSession = new MixerSession(label, ident, ordered, sessionType);
+                var mixerSession = new MixerSession(this, label, ident, ordered, sessionType);
                 mixerSessions.Add(mixerSession);
             }
 
             return mixerSessions;
         }
 
-        public AudioSessionControl FindSession(String sessionIdentifier, int instanceNumber)
+        public MixerSession FindMixerSessions(string sessionIdentifier)
         {
-            var sessions = device.AudioSessionManager.Sessions;
-            if (sessions != null)
+            var mixerSessions = GetMixerSessions();
+            foreach (var mixerSession in mixerSessions)
             {
-                var sessionsAndMeta = SessionProcessor.GetSessionMeta(ref sessions);
-                for (int i = 0; i < sessionsAndMeta.Count; i++)
+                foreach (var session in mixerSession.audioSessions)
                 {
-                    var sessionMeta = sessionsAndMeta[i];
-                    if (sessionMeta.session.GetSessionIdentifier == sessionIdentifier && sessionMeta.instanceNumber == instanceNumber)
-                        return sessionMeta.session;
+                    if (session.GetSessionIdentifier == sessionIdentifier)
+                        return mixerSession;
                 }
             }
             return null;
         }
-
-        public static AudioSessionControl FindSession(int pid)
+        
+        public MixerSession FindMixerSessions(int pid)
         {
-            var deviceEnumerator = new MMDeviceEnumerator();
-            var transientDev = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            var sessions = transientDev.AudioSessionManager.Sessions;
-            if (sessions != null)
-            {
-                for (int i = 0; i < sessions.Count; i++)
-                {
-                    if (sessions[i].GetProcessID == pid)
-                        return sessions[i];
-                }
-            }
+            var mixerSessions = GetMixerSessions();
+            foreach (var mixerSession in mixerSessions)
+                foreach (var session in mixerSession.audioSessions)
+                    if (session.GetProcessID == pid)
+                        return mixerSession;
+
             return null;
         }
     }

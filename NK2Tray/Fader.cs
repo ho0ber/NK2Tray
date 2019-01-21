@@ -19,10 +19,13 @@ namespace NK2Tray
         public MixerSession assignment;
         public bool assigned;
         public MidiOut midiOut;
+        public MidiDevice parent;
+        public string identifier;
 
-        public Fader(ref MidiOut midiOutRef, int faderNum, int inputOffst, int selectOffset, int muteOffset, int recordOffset)
+        public Fader(MidiDevice midiDevice, int faderNum, int inputOffst, int selectOffset, int muteOffset, int recordOffset)
         {
-            midiOut = midiOutRef;
+            parent = midiDevice;
+            midiOut = midiDevice.midiOut;
             commandCode = MidiCommandCode.ControlChange;
             channel = 1;
             faderNumber = faderNum;
@@ -43,7 +46,17 @@ namespace NK2Tray
         {
             assigned = true;
             assignment = mixerSession;
+            identifier = mixerSession.sessionIdentifier;
             SetSelectLight(true);
+            SetRecordLight(false);
+        }
+
+        public void AssignInactive(string ident)
+        {
+            identifier = ident;
+            assigned = false;
+            SetSelectLight(true);
+            SetRecordLight(true);
         }
 
         public void Unassign()
@@ -51,6 +64,7 @@ namespace NK2Tray
             assigned = false;
             assignment = null;
             SetSelectLight(false);
+            identifier = "";
         }
 
         public void SetSelectLight(bool state)
@@ -83,137 +97,48 @@ namespace NK2Tray
             if (controller == inputController)
             {
                 if (assigned)
+                {
                     assignment.SetVolume(me.ControllerValue / 127f);
+                    if (assignment.IsDead())
+                        SetRecordLight(true);
+                }
                 return true;
             }
             else if (controller == selectController)
             {
-                //select foreground app
+                if (me.ControllerValue != 127) // Only on button-down
+                    return true;
+
+                Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
+                if (assigned)
+                    Unassign();
+                else
+                {
+                    var pid = WindowTools.GetForegroundPID();
+                    var mixerSession = parent.audioDevice.FindMixerSessions(pid);
+                    if (mixerSession != null)
+                        Assign(mixerSession);
+                    else
+                        Console.WriteLine($@"MixerSession not found for pid {pid}");
+                }
                 return true;
             }
             else if (controller == muteController)
             {
-                //mute app
+                if (me.ControllerValue != 127) // Only on button-down
+                    return true;
+
+                SetMuteLight(assignment.ToggleMute());
+                if (assignment.IsDead())
+                    SetRecordLight(true);
                 return true;
             }
             else if (controller == recordController)
             {
-                //get info
+                SetRecordLight(assignment.IsDead());
                 return true;
             }
             return false;
         }
     }
 }
-
-/*
-            ControlSurfaceEvent cse = NanoKontrol2.Evaluate(e);
-            if (cse == null)
-                return;
-
-            if (cse.fader > 0 && assignments[cse.fader].assigned && !assignments[cse.fader].IsAlive())
-                NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, cse.fader, true));
-
-            switch (cse.eventType)
-            {
-                case ControlSurfaceEventType.FaderVolumeChange:
-                    ChangeApplicationVolume(cse);
-                    break;
-                case ControlSurfaceEventType.FaderVolumeMute:
-                    MuteApplication(cse);
-                    break;
-                case ControlSurfaceEventType.Information:
-                    GetAssignmentInformation(cse);
-                    break;
-                case ControlSurfaceEventType.Assignment:
-                    AssignForegroundSession(cse);
-                    break;
-                case ControlSurfaceEventType.MediaNext:
-                    MediaTools.Next();
-                    break;
-                case ControlSurfaceEventType.MediaPlay:
-                    MediaTools.Play();
-                    break;
-                case ControlSurfaceEventType.MediaPrevious:
-                    MediaTools.Previous();
-                    break;
-                case ControlSurfaceEventType.MediaRecord:
-                    throw new Exception("Kaboom");
-                    // Maybe mute/unmute microphone?
-                    break;
-                case ControlSurfaceEventType.MediaStop:
-                    MediaTools.Stop();
-                    break;
-                default:
-                    break;
-            }
-            */
-
-
-    /*
-public void AssignForegroundSession(ControlSurfaceEvent cse)
-{
-    if (assignments[cse.fader].assigned)
-    {
-        UnassignFader(cse.fader);
-    }
-    else
-    {
-        var pid = WindowTools.GetForegroundPID();
-        UpdateDevice();
-        var matchingSession = FindSession(pid);
-        if (matchingSession != null)
-        {
-            assignments[cse.fader] = new Assignment(matchingSession, cse.fader);
-            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.AssignedState, cse.fader, true));
-            SaveAssignments();
-        }
-    }
-}
-
-public void GetAssignmentInformation(ControlSurfaceEvent cse)
-{
-    if (assignments[cse.fader].session_alive)
-    {
-        Assignment assignment = assignments[cse.fader];
-        if (assignment.aType == AssignmentType.Process)
-            DumpProps(assignment.audioSession);
-
-        if (assignment.CheckHealth())
-            NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.ErrorState, cse.fader, false));
-
-    }
-}
-
-public void ChangeApplicationVolume(ControlSurfaceEvent cse)
-{
-    if (assignments[cse.fader].session_alive)
-    {
-        Assignment assignment = assignments[cse.fader];
-        if (assignment.aType == AssignmentType.Process)
-            assignment.audioSession.SimpleAudioVolume.Volume = cse.value;
-        else if (assignment.aType == AssignmentType.Master)
-            deviceVolume.MasterVolumeLevelScalar = cse.value;
-    }
-}
-
-public void MuteApplication(ControlSurfaceEvent cse)
-{
-    bool muted = false;
-    if (assignments[cse.fader].processName != null)
-    {
-        Assignment assignment = assignments[cse.fader];
-        if (assignment.aType == AssignmentType.Process)
-        {
-            muted = !assignment.audioSession.SimpleAudioVolume.Mute;
-            assignment.audioSession.SimpleAudioVolume.Mute = muted;
-        }
-        else if (assignment.aType == AssignmentType.Master)
-        {
-            muted = !deviceVolume.Mute;
-            deviceVolume.Mute = muted;
-        }
-        NanoKontrol2.Respond(ref midiOut, new ControlSurfaceDisplay(ControlSurfaceDisplayType.MuteState, cse.fader, muted));
-    }
-}
-*/
