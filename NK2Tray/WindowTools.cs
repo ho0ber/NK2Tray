@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -48,6 +49,19 @@ namespace NK2Tray
                 return 0;
 
             return Convert.ToInt32(pID);
+        }
+
+        public static bool ProcessExists(uint processId)
+        {
+            try
+            {
+                var process = Process.GetProcessById((int)processId);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
     }
 }

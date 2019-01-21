@@ -59,10 +59,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assignment.cs" />
+    <Compile Include="AudioDevice.cs" />
+    <Compile Include="Button.cs" />
     <Compile Include="ControlSurface.cs" />
+    <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
+    <Compile Include="MidiDevice.cs" />
+    <Compile Include="MixerSession.cs" />
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
