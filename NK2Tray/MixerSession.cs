@@ -3,8 +3,6 @@ using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NK2Tray
 {
@@ -51,7 +49,6 @@ namespace NK2Tray
                 foreach (var session in audioSessions)
                     if (session.State != AudioSessionState.AudioSessionStateExpired)
                         alive = true;
-
             }
             else
                 alive = true;
@@ -64,9 +61,7 @@ namespace NK2Tray
             if (sessionType == SessionType.Application)
             {
                 foreach (var session in audioSessions)
-                {
                     session.SimpleAudioVolume.Volume = volume;
-                }
             }
             else if (sessionType == SessionType.Master)
             {
@@ -88,14 +83,11 @@ namespace NK2Tray
 
         public bool ToggleMute()
         {
-
             if (sessionType == SessionType.Application)
             {
                 var muted = !audioSessions.First().SimpleAudioVolume.Mute;
                 foreach (var session in audioSessions)
-                {
                     session.SimpleAudioVolume.Mute = muted;
-                }
                 return muted;
             }
             else if (sessionType == SessionType.Master)
@@ -119,9 +111,6 @@ namespace NK2Tray
                 }
             }
             return false;
-
         }
     }
-
-
 }

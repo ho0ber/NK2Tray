@@ -2,14 +2,6 @@
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using NAudio.Midi;
-using System.Collections.Generic;
-using NAudio.CoreAudioApi;
-using System.Diagnostics;
-using NAudio.CoreAudioApi.Interfaces;
-using NK2Tray.Properties;
-using System.Configuration;
-using System.Runtime.InteropServices;
 
 namespace NK2Tray
 {
@@ -81,7 +73,6 @@ namespace NK2Tray
                 MenuItem unassignItem = new MenuItem("UNASSIGN", UnassignFader);
                 unassignItem.Tag = new object[] { fader };
                 faderMenu.MenuItems.Add(unassignItem);
-
             }
 
             trayMenu.MenuItems.Add("Exit", OnExit);
