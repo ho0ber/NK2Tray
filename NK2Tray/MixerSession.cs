@@ -1,0 +1,116 @@
+﻿using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NK2Tray
+{
+    public enum SessionType
+    {
+        Application,
+        SystemSounds,
+        Master
+    }
+
+    public class MixerSession
+    {
+        public string label;
+        public string sessionIdentifier;
+        public List<AudioSessionControl> audioSessions;
+        public SessionType sessionType;
+        public AudioEndpointVolume deviceVolume;
+        public AudioDevice parent;
+
+        public MixerSession(AudioDevice audioDev, string labl, string identifier, List<AudioSessionControl> sessions, SessionType sesType)
+        {
+            parent = audioDev;
+            label = labl;
+            sessionIdentifier = identifier;
+            audioSessions = sessions;
+            sessionType = sesType;
+        }
+
+        public MixerSession(AudioDevice audioDev, string labl, SessionType sesType, AudioEndpointVolume devVol)
+        {
+            parent = audioDev;
+            label = labl;
+            sessionIdentifier = "";
+            audioSessions = new List<AudioSessionControl>();
+            sessionType = sesType;
+            deviceVolume = devVol;
+        }
+
+        public bool IsDead()
+        {
+            bool alive = false;
+            if (sessionType == SessionType.Application)
+            {
+                foreach (var session in audioSessions)
+                    if (session.State != AudioSessionState.AudioSessionStateExpired)
+                        alive = true;
+            }
+            else
+                alive = true;
+
+            return !alive;
+        }
+
+        public void SetVolume(float volume)
+        {
+            if (sessionType == SessionType.Application)
+            {
+                foreach (var session in audioSessions)
+                    session.SimpleAudioVolume.Volume = volume;
+            }
+            else if (sessionType == SessionType.Master)
+            {
+                try
+                {
+                    deviceVolume.MasterVolumeLevelScalar = volume;
+                }
+                catch (System.Runtime.InteropServices.InvalidComObjectException e)
+                {
+                    // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
+                    // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
+                    Console.WriteLine($@"Error when setting master volume: {e.Message}");
+                    deviceVolume = parent.GetDeviceVolumeObject();
+                    deviceVolume.MasterVolumeLevelScalar = volume;
+                    Console.WriteLine($@"RETRY: Setting master volume to {volume}");
+                }
+            }
+        }
+
+        public bool ToggleMute()
+        {
+            if (sessionType == SessionType.Application)
+            {
+                var muted = !audioSessions.First().SimpleAudioVolume.Mute;
+                foreach (var session in audioSessions)
+                    session.SimpleAudioVolume.Mute = muted;
+                return muted;
+            }
+            else if (sessionType == SessionType.Master)
+            {
+                try
+                {
+                    var muted = !deviceVolume.Mute;
+                    deviceVolume.Mute = muted;
+                    return muted;
+                }
+                catch (System.Runtime.InteropServices.InvalidComObjectException e)
+                {
+                    // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
+                    // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
+                    Console.WriteLine($@"Error when toggling mute on master volume: {e.Message}");
+                    deviceVolume = parent.GetDeviceVolumeObject();
+                    var muted = !deviceVolume.Mute;
+                    deviceVolume.Mute = muted;
+                    Console.WriteLine("RETRY: toggling mute on master volume");
+                    return muted;
+                }
+            }
+            return false;
+        }
+    }
+}
