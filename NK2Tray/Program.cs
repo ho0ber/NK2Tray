@@ -29,7 +29,11 @@ namespace NK2Tray
             trayIcon.Visible = true;
 
             audioDevice = new AudioDevice();
-            midiDevice = new MidiDevice("nano", audioDevice);
+
+            midiDevice = new NanoKontrol2(audioDevice);
+            if (!midiDevice.Found)
+                midiDevice = new XtouchMini(audioDevice);
+
             audioDevice.midiDevice = midiDevice;
 
             System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;

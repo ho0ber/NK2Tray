@@ -81,6 +81,103 @@ namespace NK2Tray
             }
         }
 
+        public float GetVolume()
+        {
+            if (sessionType == SessionType.Application)
+            {
+                foreach (var session in audioSessions)
+                {
+                    var curVol = session.SimpleAudioVolume.Volume;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    return curVol;
+                }
+            }
+            else if (sessionType == SessionType.Master)
+            {
+                try
+                {
+                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    return curVol;
+                }
+                catch (System.Runtime.InteropServices.InvalidComObjectException e)
+                {
+                    // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
+                    // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
+                    Console.WriteLine($@"Error when getting master volume: {e.Message}");
+                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    return curVol;
+                }
+            }
+            return -1;
+        }
+
+        public float ChangeVolume(float change)
+        {
+            float retVol = -1;
+            if (sessionType == SessionType.Application)
+            {
+                foreach (var session in audioSessions)
+                {
+                    if (retVol < 0)
+                    {
+                        var curVol = session.SimpleAudioVolume.Volume;
+                        curVol += change;
+                        if (curVol < 0)
+                            curVol = 0;
+                        if (curVol > 1)
+                            curVol = 1;
+                        session.SimpleAudioVolume.Volume = curVol;
+                        retVol = curVol;
+                    }
+                    {
+                        session.SimpleAudioVolume.Volume = retVol;
+                    }
+                }
+            }
+            else if (sessionType == SessionType.Master)
+            {
+                try
+                {
+                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    curVol += change;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    deviceVolume.MasterVolumeLevelScalar = curVol;
+                    retVol = curVol;
+                }
+                catch (System.Runtime.InteropServices.InvalidComObjectException e)
+                {
+                    // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
+                    // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
+                    Console.WriteLine($@"Error when setting master volume: {e.Message}");
+                    deviceVolume = parent.GetDeviceVolumeObject();
+                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    curVol += change;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    deviceVolume.MasterVolumeLevelScalar = curVol;
+                    Console.WriteLine($@"RETRY: Setting master volume by {change}");
+                }
+
+            }
+            return retVol;
+        }
+
         public bool ToggleMute()
         {
             if (sessionType == SessionType.Application)
@@ -106,6 +203,7 @@ namespace NK2Tray
                     deviceVolume = parent.GetDeviceVolumeObject();
                     var muted = !deviceVolume.Mute;
                     deviceVolume.Mute = muted;
+
                     Console.WriteLine("RETRY: toggling mute on master volume");
                     return muted;
                 }

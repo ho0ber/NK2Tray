@@ -3,33 +3,76 @@ using System;
 
 namespace NK2Tray
 {
+    public class FaderDef
+    {
+        public bool delta;
+        public float range;
+        public int channel;
+        public bool selectPresent;
+        public bool mutePresent;
+        public bool recordPresent;
+        public int faderOffset;
+        public int selectOffset;
+        public int muteOffset;
+        public int recordOffset;
+        public MidiCommandCode faderCode;
+        public MidiCommandCode selectCode;
+        public MidiCommandCode muteCode;
+        public MidiCommandCode recordCode;
+
+        public FaderDef(bool _delta, float _range, int _channel,
+            bool _selectPresent, bool _mutePresent, bool _recordPresent,
+            int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset,
+            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode)
+        {
+            delta = _delta;
+            range = _range;
+            channel = _channel;
+            selectPresent = _selectPresent;
+            mutePresent = _mutePresent;
+            recordPresent = _recordPresent;
+            faderOffset = _faderOffset;
+            selectOffset = _selectOffset;
+            muteOffset = _muteOffset;
+            recordOffset = _recordOffset;
+            faderCode = _faderCode;
+            selectCode = _selectCode;
+            muteCode = _muteCode;
+            recordCode = _recordCode;
+        }
+    }
+
     public class Fader
     {
-        public MidiCommandCode commandCode;
-        public int channel;
         public int faderNumber;
-        public int inputController;
-        public int selectController;
-        public int muteController;
-        public int recordController;
+        public FaderDef faderDef;
         public MixerSession assignment;
         public bool assigned;
         public MidiOut midiOut;
         public MidiDevice parent;
         public string identifier;
 
-        public Fader(MidiDevice midiDevice, int faderNum, int inputOffst, int selectOffset, int muteOffset, int recordOffset)
+        public Fader(MidiDevice midiDevice, int faderNum)
         {
             parent = midiDevice;
             midiOut = midiDevice.midiOut;
-            commandCode = MidiCommandCode.ControlChange;
-            channel = 1;
             faderNumber = faderNum;
-            inputController = faderNum + inputOffst;
-            selectController = faderNum + selectOffset;
-            muteController = faderNum + muteOffset;
-            recordController = faderNum + recordOffset;
+            faderDef = parent.DefaultFaderDef;
         }
+
+        public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
+        {
+            parent = midiDevice;
+            midiOut = midiDevice.midiOut;
+            faderNumber = faderNum;
+            faderDef = _faderDef;
+        }
+
+        private int inputController => faderNumber + faderDef.faderOffset;
+        private int selectController => faderNumber + faderDef.selectOffset;
+        private int muteController => faderNumber + faderDef.muteOffset;
+        private int recordController => faderNumber + faderDef.recordOffset;
+
 
         public void ResetLights()
         {
@@ -45,6 +88,8 @@ namespace NK2Tray
             identifier = mixerSession.sessionIdentifier;
             SetSelectLight(true);
             SetRecordLight(false);
+            if (faderDef.delta)
+                parent.SetVolumeIndicator(faderNumber, mixerSession.GetVolume());
         }
 
         public void AssignInactive(string ident)
@@ -61,67 +106,129 @@ namespace NK2Tray
             assignment = null;
             SetSelectLight(false);
             identifier = "";
+            if (faderDef.delta)
+                parent.SetVolumeIndicator(faderNumber, -1);
         }
 
         public void SetSelectLight(bool state)
         {
-            midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(selectController), state ? 127 : 0).GetAsShortMessage());
+            parent.SetLight(selectController, state);
         }
 
         public void SetMuteLight(bool state)
         {
-            midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(muteController), state ? 127 : 0).GetAsShortMessage());
+            parent.SetLight(muteController, state);
         }
 
         public void SetRecordLight( bool state)
         {
-            midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(recordController), state ? 127 : 0).GetAsShortMessage());
+            parent.SetLight(recordController, state);
+        }
+
+        public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset)
+        {
+            if (midiEvent.Channel != faderDef.channel)
+                return false;
+            if (midiEvent.CommandCode != code)
+                return false;
+            if (code == MidiCommandCode.ControlChange)
+            {
+                var me = (ControlChangeEvent)midiEvent;
+                if ((int)me.Controller == faderNumber + offset)
+                    return true;
+            }
+            else if (code == MidiCommandCode.NoteOn)
+            {
+                var me = (NoteEvent)midiEvent;
+                if (me.NoteNumber == faderNumber + offset)
+                    return true;
+            }
+            else if (code == MidiCommandCode.PitchWheelChange)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public int GetValue(MidiEvent midiEvent)
+        {
+            if (midiEvent.CommandCode == MidiCommandCode.ControlChange)
+            {
+                var me = (ControlChangeEvent)midiEvent;
+                return me.ControllerValue;
+            }
+            else if (midiEvent.CommandCode == MidiCommandCode.NoteOn)
+            {
+                var me = (NoteEvent)midiEvent;
+                return me.Velocity;
+            }
+            else if (midiEvent.CommandCode == MidiCommandCode.PitchWheelChange)
+            {
+                var me = (PitchWheelChangeEvent)midiEvent;
+                return me.Pitch;
+            }
+
+            return 0;
         }
 
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
-            if (e.MidiEvent.CommandCode != commandCode)
-                return false;
-
-            ControlChangeEvent me = (ControlChangeEvent)e.MidiEvent;
-
-            if (me.Channel != channel)
-                return false;
-
-            int controller = (int)me.Controller;
-
-            if (controller == inputController)
+            // Fader match
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset))
             {
-                if (assigned)
+                if (faderDef.delta)
                 {
-                    assignment.SetVolume(me.ControllerValue / 127f);
-                    if (assignment.IsDead())
-                        SetRecordLight(true);
+                    float curVol;
+                    var val = GetValue(e.MidiEvent);
+                    if (val > faderDef.range / 2)
+                        curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
+                    else
+                        curVol = assignment.ChangeVolume(val / faderDef.range);
+                    parent.SetVolumeIndicator(faderNumber, curVol);
                 }
+                else
+                {
+                    assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
+                }
+
+                if (assignment.IsDead())
+                    SetRecordLight(true);
+
                 return true;
             }
-            else if (controller == selectController)
+
+            // Select match
+            if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset))
             {
-                if (me.ControllerValue != 127) // Only on button-down
+                if (GetValue(e.MidiEvent) != 127) // Only on button-down
                     return true;
 
                 Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
                 if (assigned)
+                {
                     Unassign();
+                    parent.SaveAssignments();
+                }
                 else
                 {
                     var pid = WindowTools.GetForegroundPID();
                     var mixerSession = parent.audioDevice.FindMixerSessions(pid);
                     if (mixerSession != null)
+                    {
                         Assign(mixerSession);
+                        parent.SaveAssignments();
+                    }
                     else
                         Console.WriteLine($@"MixerSession not found for pid {pid}");
                 }
                 return true;
             }
-            else if (controller == muteController)
+
+            // Mute match
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset))
             {
-                if (me.ControllerValue != 127) // Only on button-down
+                if (GetValue(e.MidiEvent) != 127) // Only on button-down
                     return true;
 
                 SetMuteLight(assignment.ToggleMute());
@@ -129,12 +236,15 @@ namespace NK2Tray
                     SetRecordLight(true);
                 return true;
             }
-            else if (controller == recordController)
+
+            // Record match
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset))
             {
                 SetRecordLight(assignment.IsDead());
                 return true;
             }
             return false;
+
         }
     }
 }
