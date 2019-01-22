@@ -20,9 +20,9 @@ namespace NK2Tray
         public int channel;
         public MidiOut midiOut;
 
-        public Button(ref MidiOut midiOutRef, ButtonType butType, int cont, bool initialState)
+        public Button(ref MidiOut midiOutRef, ButtonType butType, int cont, bool initialState, MidiCommandCode code=MidiCommandCode.ControlChange)
         {
-            commandCode = MidiCommandCode.ControlChange;
+            commandCode = code;
             channel = 1;
             buttonType = butType;
             controller = cont;
@@ -32,7 +32,10 @@ namespace NK2Tray
 
         public void SetLight(bool state)
         {
-            midiOut.Send(new ControlChangeEvent(0, channel, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
+            if (commandCode == MidiCommandCode.ControlChange)
+                midiOut.Send(new ControlChangeEvent(0, channel, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
+            else if (commandCode == MidiCommandCode.NoteOn)
+                midiOut.Send(new NoteOnEvent(0, 1, controller, state ? 127 : 0, 0).GetAsShortMessage());
         }
 
         public bool HandleEvent(MidiInMessageEventArgs e)
@@ -40,12 +43,28 @@ namespace NK2Tray
             if (e.MidiEvent.CommandCode != commandCode)
                 return false;
 
-            ControlChangeEvent me = (ControlChangeEvent)e.MidiEvent;
+            int c;
 
-            if (me.Channel != channel || me.ControllerValue != 127) // Only on correct channel and button-down (127)
+            if (commandCode == MidiCommandCode.ControlChange)
+            {
+                var me = (ControlChangeEvent)e.MidiEvent;
+
+                if (me.Channel != channel || me.ControllerValue != 127) // Only on correct channel and button-down (127)
+                    return false;
+
+                c = (int)me.Controller;
+            }
+            else if (commandCode == MidiCommandCode.NoteOn)
+            {
+                var me = (NoteEvent)e.MidiEvent;
+
+                if (me.Channel != channel || me.Velocity != 127) // Only on correct channel and button-down (127)
+                    return false;
+
+                c = me.NoteNumber;
+            }
+            else
                 return false;
-
-            int c = (int)me.Controller;
 
             if (c == controller)
             {

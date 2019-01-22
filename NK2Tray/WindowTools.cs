@@ -59,5 +59,12 @@ namespace NK2Tray
                 return false;
             }
         }
+
+        public static void Dump(object ob)
+        {
+            Console.WriteLine("================");
+            foreach (var prop in ob.GetType().GetProperties())
+                Console.WriteLine($@"{prop.Name} = {prop.GetValue(ob, null)}");
+        }
     }
 }

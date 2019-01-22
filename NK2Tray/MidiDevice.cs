@@ -28,29 +28,26 @@ namespace NK2Tray
 
         public AudioDevice audioDevice;
 
-        public string searchString = "";
+        public virtual string SearchString => "wobbo";
 
-        public MidiDevice(string search, AudioDevice audioDev)
+        public virtual FaderDef DefaultFaderDef => new FaderDef(false, 1f, 1, true, true, true, 0, 0, 0, 0, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange);
+
+        public MidiDevice()
         {
-            audioDevice = audioDev;
-            searchString = search;
-            FindMidiIn();
-            FindMidiOut();
-            ResetAllLights();
-            InitFaders();
-            InitButtons();
-            LoadAssignments();
-            ListenForMidi();
+            Console.WriteLine($@"Initializing Midi Device {SearchString}");
         }
+
+        public bool Found => (midiIn != null && midiOut != null);
 
         public void FindMidiIn()
         {
             for (int i = 0; i < MidiIn.NumberOfDevices; i++)
             {
-                if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains(searchString))
+                Console.WriteLine("MIDI IN: " + MidiIn.DeviceInfo(i).ProductName);
+                if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
                 {
                     midiIn = new MidiIn(i);
-                    Console.WriteLine(MidiIn.DeviceInfo(i).ProductName);
+                    Console.WriteLine($@"Assigning MidiIn: {MidiIn.DeviceInfo(i).ProductName}");
                     break;
                 }
             }
@@ -60,10 +57,11 @@ namespace NK2Tray
         {
             for (int i = 0; i < MidiOut.NumberOfDevices; i++)
             {
-                if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains(searchString))
+                Console.WriteLine("MIDI OUT: " + MidiOut.DeviceInfo(i).ProductName);
+                if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
                 {
                     midiOut = new MidiOut(i);
-                    Console.WriteLine(MidiOut.DeviceInfo(i).ProductName);
+                    Console.WriteLine($@"Assigning MidiOut: {MidiOut.DeviceInfo(i).ProductName}");
                     break;
                 }
             }
@@ -82,8 +80,10 @@ namespace NK2Tray
                 e.Timestamp, e.RawMessage, e.MidiEvent));
         }
 
-        public void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
+        public virtual void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
+            WindowTools.Dump(e.MidiEvent);
+
             foreach (var fader in faders)
                 fader.HandleEvent(e);
 
@@ -91,31 +91,20 @@ namespace NK2Tray
                 button.HandleEvent(e);
         }
 
-        public void ResetAllLights()
-        {
-            foreach (var i in Enumerable.Range(0, 128))
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
-        }
+        public virtual void ResetAllLights() { }
 
-        public void InitFaders()
+        public virtual void SetVolumeIndicator(int fader, float level) { }
+
+        public virtual void SetLight(int controller, bool state) {}
+
+        public virtual void InitFaders()
         {
             faders = new List<Fader>();
-            foreach (var i in Enumerable.Range(0, 8))
-            {
-                Fader fader = new Fader(this, i, 0, 32, 48, 64);
-                fader.ResetLights();
-                faders.Add(fader);
-            }
         }
 
-        public void InitButtons()
+        public virtual void InitButtons()
         {
             buttons = new List<Button>();
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPrevious, 43, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaNext,     44, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaStop,     42, false));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPlay,     41, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaRecord,   45, false));
         }
 
         public void LoadAssignments()
@@ -153,13 +142,17 @@ namespace NK2Tray
 
             if (!foundAssignments)
             {
-                faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
-                SaveAssignments();
+                if (faders.Count > 0)
+                {
+                    faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                    SaveAssignments();
+                }
             }
         }
 
         public void SaveAssignments()
         {
+            Console.WriteLine("Saving Assignments");
             foreach (var fader in faders)
             {
                 if (fader.assigned)
