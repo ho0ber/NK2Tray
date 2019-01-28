@@ -28,18 +28,19 @@ namespace NK2Tray
         public FaderDef MasterFaderDef => new FaderDef(
             false,  // delta
             16383f, // range
-            9,      // channel
-            false,  // selectPresent
-            false,  // mutePresent
+            1,      // channel
+            true,   // selectPresent
+            true,   // mutePresent
             false,  // recordPresent
             0,      // faderOffset
-            0,      // selectOffset
-            0,      // muteOffset
+            76,     // selectOffset
+            77,     // muteOffset
             0,      // recordOffset
             MidiCommandCode.PitchWheelChange, // faderCode
             MidiCommandCode.NoteOn,           // selectCode
             MidiCommandCode.NoteOn,           // muteCode
-            MidiCommandCode.ControlChange     // recordCode
+            MidiCommandCode.ControlChange,    // recordCode
+            9      // faderChannelOverride
         );
 
         public XtouchMini(AudioDevice audioDev)

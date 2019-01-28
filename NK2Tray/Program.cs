@@ -16,6 +16,7 @@ namespace NK2Tray
 
         public SysTrayApp()
         {
+            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
             Console.WriteLine($@"NK2 Tray {DateTime.Now}");
             trayIcon = new NotifyIcon
             {
@@ -35,16 +36,26 @@ namespace NK2Tray
                 midiDevice = new XtouchMini(audioDevice);
 
             audioDevice.midiDevice = midiDevice;
-
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
         }
 
         private void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
         {
             Console.WriteLine(e.ExceptionObject.ToString());
-            midiDevice.ResetAllLights();
-            midiDevice.faders.Last().SetRecordLight(true);
-            Environment.Exit(1);
+            MessageBox.Show(e.ExceptionObject.ToString(), "NK2 Tray Error", MessageBoxButtons.OK);
+
+            if (midiDevice != null)
+            {
+                try
+                {
+                    midiDevice.ResetAllLights();
+                    midiDevice.faders.Last().SetRecordLight(true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+            Application.Exit();
         }
 
         private void OnPopup(object sender, EventArgs e)

@@ -19,11 +19,16 @@ namespace NK2Tray
         public MidiCommandCode selectCode;
         public MidiCommandCode muteCode;
         public MidiCommandCode recordCode;
+        public int faderChannelOverride;
+        public int selectChannelOverride;
+        public int muteChannelOverride;
+        public int recordChannelOverride;
 
         public FaderDef(bool _delta, float _range, int _channel,
             bool _selectPresent, bool _mutePresent, bool _recordPresent,
             int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset,
-            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode)
+            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode,
+            int _faderChannelOverride = -1, int _selectChannelOverride = -1, int _muteChannelOverride = -1, int _recordChannelOverride = -1)
         {
             delta = _delta;
             range = _range;
@@ -39,6 +44,10 @@ namespace NK2Tray
             selectCode = _selectCode;
             muteCode = _muteCode;
             recordCode = _recordCode;
+            faderChannelOverride = _faderChannelOverride;
+            selectChannelOverride = _selectChannelOverride;
+            muteChannelOverride = _muteChannelOverride;
+            recordChannelOverride = _recordChannelOverride;
         }
     }
 
@@ -125,9 +134,11 @@ namespace NK2Tray
             parent.SetLight(recordController, state);
         }
 
-        public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset)
+        public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset, int channel=-1)
         {
-            if (midiEvent.Channel != faderDef.channel)
+            if (channel < 0)
+                channel = faderDef.channel;
+            if (midiEvent.Channel != channel)
                 return false;
             if (midiEvent.CommandCode != code)
                 return false;
@@ -175,7 +186,7 @@ namespace NK2Tray
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
             // Fader match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset))
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
             {
                 if (faderDef.delta)
                 {
@@ -199,7 +210,7 @@ namespace NK2Tray
             }
 
             // Select match
-            if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset))
+            if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
             {
                 if (GetValue(e.MidiEvent) != 127) // Only on button-down
                     return true;
@@ -226,7 +237,7 @@ namespace NK2Tray
             }
 
             // Mute match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset))
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
             {
                 if (GetValue(e.MidiEvent) != 127) // Only on button-down
                     return true;
@@ -238,7 +249,7 @@ namespace NK2Tray
             }
 
             // Record match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset))
+            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride))
             {
                 SetRecordLight(assignment.IsDead());
                 return true;
