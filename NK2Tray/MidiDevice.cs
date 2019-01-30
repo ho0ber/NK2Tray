@@ -1,5 +1,6 @@
 ﻿using NAudio.Midi;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace NK2Tray
 
         public List<Fader> faders;
         public List<Button> buttons;
+        public Hashtable buttonsMappingTable;
 
         public AudioDevice audioDevice;
 
@@ -82,16 +84,41 @@ namespace NK2Tray
 
         public virtual void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            WindowTools.Dump(e.MidiEvent);
+            //WindowTools.Dump(e.MidiEvent);
 
             foreach (var fader in faders)
+            {
                 fader.HandleEvent(e);
+                fader.SetHandling(false);
+            }
 
-            foreach (var button in buttons)
-                button.HandleEvent(e);
+            var midiController = (ControlChangeEvent)e.MidiEvent;
+            if (midiController == null)
+                return;
+            //key UP...!
+            if (midiController.ControllerValue == 0)
+                return;
+
+            var obj = buttonsMappingTable[(int)midiController.Controller];
+            if (obj != null)
+            {
+                Button button = (Button)obj;
+                button.HandleEvent(e, this);
+                button.SetHandling(false);
+            }
+            else
+            {
+                foreach (var button in buttons)
+                {
+                    button.HandleEvent(e, this);
+                    button.SetHandling(false);
+                }
+            }
         }
 
         public virtual void ResetAllLights() { }
+
+        public virtual void LightShow() { }
 
         public virtual void SetVolumeIndicator(int fader, float level) { }
 
@@ -109,45 +136,45 @@ namespace NK2Tray
 
         public void LoadAssignments()
         {
-            bool foundAssignments = false;
+                bool foundAssignments = false;
 
-            foreach (var fader in faders)
-            {
-                Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
-                var ident = GetAppSettings(fader.faderNumber.ToString());
-
-                Console.WriteLine("Got setting: " + ident);
-                if (ident != null)
+                foreach (var fader in faders)
                 {
-                    if (ident == "__MASTER__")
+                    Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
+                    var ident = GetAppSettings(fader.faderNumber.ToString());
+
+                    Console.WriteLine("Got setting: " + ident);
+                    if (ident != null)
                     {
-                        foundAssignments = true;
-                        fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
-                    }
-                    else if (ident.Length > 0)
-                    {
-                        foundAssignments = true;
-                        var matchingSession = audioDevice.FindMixerSessions(ident);
-                        if (matchingSession != null)
-                            fader.Assign(matchingSession);
+                        if (ident == "__MASTER__")
+                        {
+                            foundAssignments = true;
+                            fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                        }
+                        else if (ident.Length > 0)
+                        {
+                            foundAssignments = true;
+                            var matchingSession = audioDevice.FindMixerSessions(ident);
+                            if (matchingSession != null)
+                                fader.Assign(matchingSession);
+                            else
+                                fader.AssignInactive(ident);
+                        }
                         else
-                            fader.AssignInactive(ident);
-                    }
-                    else
-                    {
-                        fader.Unassign();
+                        {
+                            fader.Unassign();
+                        }
                     }
                 }
-            }
 
-            if (!foundAssignments)
-            {
-                if (faders.Count > 0)
+                if (!foundAssignments)
                 {
-                    faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
-                    SaveAssignments();
+                    if (faders.Count > 0)
+                    {
+                        faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                        SaveAssignments();
+                    }
                 }
-            }
         }
 
         public void SaveAssignments()

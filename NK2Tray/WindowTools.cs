@@ -17,7 +17,19 @@ namespace NK2Tray
 
         public static int GetPidByName(string name)
         {
+            Process[] processes = Process.GetProcessesByName(name);
+            int pid = 0;
+            int maxHandleCount = 0;
+            foreach (Process process in processes)
             {
+                if (process.Id != 0 && process.HandleCount > maxHandleCount)
+                {
+                    maxHandleCount = process.HandleCount;
+                    pid = process.Id;
+                }
+            }
+            return pid;
+            /*{
                 var hWnd = FindWindow(name, "");
                 if (hWnd == IntPtr.Zero)
                     return 0;
@@ -29,7 +41,7 @@ namespace NK2Tray
 
                 Console.WriteLine(pID);
                 return Convert.ToInt32(pID);
-            }
+            }*/
 
         }
 
@@ -65,6 +77,16 @@ namespace NK2Tray
             Console.WriteLine("================");
             foreach (var prop in ob.GetType().GetProperties())
                 Console.WriteLine($@"{prop.Name} = {prop.GetValue(ob, null)}");
+        }
+
+        public static bool IsProcessByNameRunning(string processName)
+        {
+            return GetPidByName(processName) != 0;
+        }
+
+        public static void StartApplication(string applicationPath)
+        {
+            Process.Start(new ProcessStartInfo(applicationPath));
         }
     }
 }
