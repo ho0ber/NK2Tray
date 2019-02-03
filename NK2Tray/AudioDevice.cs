@@ -83,35 +83,44 @@ namespace NK2Tray
 
             foreach (var ident in sessionsByIdent.Keys.ToList())
             {
-                try
+                var identSessions = sessionsByIdent[ident]; //.OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
+
+                bool dup = identSessions.Count > 1;
+                
+                SessionType sessionType = SessionType.Application;
+
+                var process = FindLivingProcess(identSessions);
+                string label = (process != null) ? process.ProcessName : ident;
+
+                if (identSessions.First().IsSystemSoundsSession && WindowTools.ProcessExists(identSessions.First().GetProcessID))
                 {
-                    var ordered = sessionsByIdent[ident].OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
-
-                    bool dup = ordered.Count > 1;
-                    string label;
-                    SessionType sessionType;
-
-                    if (ordered.First().IsSystemSoundsSession && WindowTools.ProcessExists(ordered.First().GetProcessID))
-                    {
-                        label = "System Sounds";
-                        sessionType = SessionType.SystemSounds;
-                    }
-                    else
-                    {
-                        label = Process.GetProcessById((int)ordered.First().GetProcessID).ProcessName;
-                        sessionType = SessionType.Application;
-                    }
-
-                    var mixerSession = new MixerSession(this, label, ident, ordered, sessionType);
-                    mixerSessions.Add(mixerSession);
+                    label = "System Sounds";
+                    sessionType = SessionType.SystemSounds;
                 }
-                catch (ArgumentException e)
-                {
-                    Console.WriteLine($@"Error: {e.Message}");
-                }
+
+                var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
+                mixerSessions.Add(mixerSession);
             }
 
             return mixerSessions;
+        }
+
+        public Process FindLivingProcess(List<AudioSessionControl> sessions)
+        {
+            Process process = null;
+            foreach (var session in sessions)
+            {
+                try
+                {
+                    process = Process.GetProcessById((int)session.GetProcessID);
+                    return process;
+                }
+                catch (ArgumentException e)
+                {
+                    Console.WriteLine($@"Failed to find process {session.GetProcessID}");
+                }
+            }
+            return process;
         }
 
         public MixerSession FindMixerSessions(string sessionIdentifier)
