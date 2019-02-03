@@ -83,25 +83,32 @@ namespace NK2Tray
 
             foreach (var ident in sessionsByIdent.Keys.ToList())
             {
-                var ordered = sessionsByIdent[ident].OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
-
-                bool dup = ordered.Count > 1;
-                string label;
-                SessionType sessionType;
-
-                if (ordered.First().IsSystemSoundsSession && WindowTools.ProcessExists(ordered.First().GetProcessID))
+                try
                 {
-                    label = "System Sounds";
-                    sessionType = SessionType.SystemSounds;
-                }
-                else
-                {
-                    label = Process.GetProcessById((int)ordered.First().GetProcessID).ProcessName;
-                    sessionType = SessionType.Application;
-                }
+                    var ordered = sessionsByIdent[ident].OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
 
-                var mixerSession = new MixerSession(this, label, ident, ordered, sessionType);
-                mixerSessions.Add(mixerSession);
+                    bool dup = ordered.Count > 1;
+                    string label;
+                    SessionType sessionType;
+
+                    if (ordered.First().IsSystemSoundsSession && WindowTools.ProcessExists(ordered.First().GetProcessID))
+                    {
+                        label = "System Sounds";
+                        sessionType = SessionType.SystemSounds;
+                    }
+                    else
+                    {
+                        label = Process.GetProcessById((int)ordered.First().GetProcessID).ProcessName;
+                        sessionType = SessionType.Application;
+                    }
+
+                    var mixerSession = new MixerSession(this, label, ident, ordered, sessionType);
+                    mixerSessions.Add(mixerSession);
+                }
+                catch (ArgumentException e)
+                {
+                    Console.WriteLine($@"Error: {e.Message}");
+                }
             }
 
             return mixerSessions;
