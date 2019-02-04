@@ -92,11 +92,8 @@ namespace NK2Tray
                 var process = FindLivingProcess(identSessions);
                 string label = (process != null) ? process.ProcessName : ident;
 
-                if (identSessions.First().IsSystemSoundsSession && WindowTools.ProcessExists(identSessions.First().GetProcessID))
-                {
+                if (HasSystemSoundsSession(identSessions))
                     label = "System Sounds";
-                    sessionType = SessionType.SystemSounds;
-                }
 
                 var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
                 mixerSessions.Add(mixerSession);
@@ -121,6 +118,15 @@ namespace NK2Tray
                 }
             }
             return process;
+        }
+
+        public bool HasSystemSoundsSession(List<AudioSessionControl> sessions)
+        {
+            foreach (var session in sessions)
+                if (session.IsSystemSoundsSession)
+                    return true;
+
+            return false;
         }
 
         public MixerSession FindMixerSessions(string sessionIdentifier)
