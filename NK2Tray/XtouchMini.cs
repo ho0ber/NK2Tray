@@ -25,6 +25,23 @@ namespace NK2Tray
             MidiCommandCode.ControlChange  // recordCode
         );
 
+        public FaderDef FirstTwoFaderDef => new FaderDef(
+            true,  // delta
+            64f,   // range
+            1,     // channel
+            true,  // selectPresent
+            true,  // mutePresent
+            false, // recordPresent
+            16,    // faderOffset
+            32,    // selectOffset
+            89,    // muteOffset
+            0,     // recordOffset
+            MidiCommandCode.ControlChange, // faderCode
+            MidiCommandCode.NoteOn,        // selectCode
+            MidiCommandCode.NoteOn,        // muteCode
+            MidiCommandCode.ControlChange  // recordCode
+        );
+
         public FaderDef MasterFaderDef => new FaderDef(
             false,  // delta
             16383f, // range
@@ -90,14 +107,22 @@ namespace NK2Tray
         {
             faders = new List<Fader>();
             
-            foreach (var i in Enumerable.Range(0, 8))
+            foreach (var i in Enumerable.Range(0, 9))
             {
-                Fader fader = new Fader(this, i);
+                Fader fader = new Fader(this, i, SelectFaderDef(i));
                 fader.ResetLights();
                 faders.Add(fader);
             }
+        }
 
-            faders.Add(new Fader(this, 8, MasterFaderDef));
+        public FaderDef SelectFaderDef(int faderNum)
+        {
+            if (faderNum < 2)
+                return FirstTwoFaderDef;
+            else if (faderNum == 8)
+                return MasterFaderDef;
+            else
+                return DefaultFaderDef;
         }
 
         public override void InitButtons()
