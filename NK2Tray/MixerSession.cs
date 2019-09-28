@@ -84,6 +84,18 @@ namespace NK2Tray
                     //TODO find out where this exception comes from and actually fix it
                     Console.WriteLine("COM Execption" + e);
                 }
+            } else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                // Check if null since mixer session might not exist for currently focused window
+                if (mixerSession != null)
+                {
+                    foreach (var session in mixerSession.audioSessions)
+                    {
+                        session.SimpleAudioVolume.Volume = volume;
+                    }
+                }
             }
         }
 
@@ -185,16 +197,19 @@ namespace NK2Tray
             {
                 var pid = WindowTools.GetForegroundPID();
                 var mixerSession = parent.FindMixerSessions(pid);
-                foreach (var session in mixerSession.audioSessions)
+                if( mixerSession != null)
                 {
-                    var curVol = session.SimpleAudioVolume.Volume;
-                    curVol += change;
-                    if (curVol < 0)
-                        curVol = 0;
-                    if (curVol > 1)
-                        curVol = 1;
-                    session.SimpleAudioVolume.Volume = curVol;
-                    retVol = curVol;
+                    foreach (var session in mixerSession.audioSessions)
+                    {
+                        var curVol = session.SimpleAudioVolume.Volume;
+                        curVol += change;
+                        if (curVol < 0)
+                            curVol = 0;
+                        if (curVol > 1)
+                            curVol = 1;
+                        session.SimpleAudioVolume.Volume = curVol;
+                        retVol = curVol;
+                    }
                 }
             }
             return retVol;
