@@ -10,7 +10,8 @@ namespace NK2Tray
     {
         Application,
         SystemSounds,
-        Master
+        Master,
+        Focus
     }
 
     public class MixerSession
@@ -77,6 +78,11 @@ namespace NK2Tray
                     deviceVolume = parent.GetDeviceVolumeObject();
                     deviceVolume.MasterVolumeLevelScalar = volume;
                     Console.WriteLine($@"RETRY: Setting master volume to {volume}");
+                }
+                catch (System.Runtime.InteropServices.COMException e)
+                {
+                    //TODO find out where this exception comes from and actually fix it
+                    Console.WriteLine("COM Execption" + e);
                 }
             }
         }
@@ -174,6 +180,22 @@ namespace NK2Tray
                     Console.WriteLine($@"RETRY: Setting master volume by {change}");
                 }
 
+            }
+            else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                foreach (var session in mixerSession.audioSessions)
+                {
+                    var curVol = session.SimpleAudioVolume.Volume;
+                    curVol += change;
+                    if (curVol < 0)
+                        curVol = 0;
+                    if (curVol > 1)
+                        curVol = 1;
+                    session.SimpleAudioVolume.Volume = curVol;
+                    retVol = curVol;
+                }
             }
             return retVol;
         }

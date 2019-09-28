@@ -124,6 +124,11 @@ namespace NK2Tray
                         foundAssignments = true;
                         fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
                     }
+                    if (ident == "__FOCUS__")
+                    {
+                        foundAssignments = true;
+                        fader.Assign(new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject()));
+                    }
                     else if (ident.Length > 0)
                     {
                         foundAssignments = true;
@@ -140,6 +145,7 @@ namespace NK2Tray
                 }
             }
 
+            // Load fader 8 as master volume control as default if no faders are set
             if (!foundAssignments)
             {
                 if (faders.Count > 0)
@@ -158,9 +164,17 @@ namespace NK2Tray
                 if (fader.assigned)
                 {
                     if (fader.assignment.sessionType == SessionType.Master)
+                    {
                         AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                    } else if (fader.assignment.sessionType == SessionType.Focus)
+                    {
+                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__FOCUS__");
+                    }
                     else
+                    {
                         AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
+                    }
+                        
                 }
                 else
                     AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
