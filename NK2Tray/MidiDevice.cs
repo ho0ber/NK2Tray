@@ -1,7 +1,6 @@
 ﻿using NAudio.Midi;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 
 namespace NK2Tray
@@ -95,7 +94,7 @@ namespace NK2Tray
 
         public virtual void SetVolumeIndicator(int fader, float level) { }
 
-        public virtual void SetLight(int controller, bool state) {}
+        public virtual void SetLight(int controller, bool state) { }
 
         public virtual void InitFaders()
         {
@@ -114,7 +113,7 @@ namespace NK2Tray
             foreach (var fader in faders)
             {
                 Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
-                var ident = GetAppSettings(fader.faderNumber.ToString());
+                var ident = ConfigSaver.GetAppSettings(fader.faderNumber.ToString());
 
                 Console.WriteLine("Got setting: " + ident);
                 if (ident != null)
@@ -158,54 +157,14 @@ namespace NK2Tray
                 if (fader.assigned)
                 {
                     if (fader.assignment.sessionType == SessionType.Master)
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
                     else
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
                 }
                 else
-                    AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
+                    ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
             }
         }
 
-        public static void AddOrUpdateAppSettings(string key, string value)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                if (settings[key] == null)
-                {
-                    settings.Add(key, value);
-                }
-                else
-                {
-                    settings[key].Value = value;
-                }
-                configFile.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-            }
-            catch (ConfigurationErrorsException)
-            {
-                Console.WriteLine("Error writing app settings");
-            }
-        }
-
-        public static string GetAppSettings(string key)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                if (settings[key] != null)
-                    return settings[key].Value;
-                else
-                    return null;
-            }
-            catch
-            {
-                Console.WriteLine("Error getting app settings");
-            }
-            return null;
-        }
     }
 }
