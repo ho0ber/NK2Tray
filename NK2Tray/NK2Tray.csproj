@@ -61,6 +61,7 @@
   <ItemGroup>
     <Compile Include="AudioDevice.cs" />
     <Compile Include="Button.cs" />
+    <Compile Include="ConfigSaver.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
