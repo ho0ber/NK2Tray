@@ -86,7 +86,14 @@ namespace NK2Tray
 
         public static void StartApplication(string applicationPath)
         {
-            Process.Start(new ProcessStartInfo(applicationPath));
+            try
+            {
+                Process.Start(new ProcessStartInfo(applicationPath));
+            }
+            catch (InvalidOperationException)
+            {
+                // Application cannot be started for this button
+            } 
         }
     }
 }
