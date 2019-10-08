@@ -78,6 +78,11 @@ namespace NK2Tray
                     deviceVolume.MasterVolumeLevelScalar = volume;
                     Console.WriteLine($@"RETRY: Setting master volume to {volume}");
                 }
+                catch (System.Runtime.InteropServices.COMException e)
+                {
+                    //TODO find out where this exception comes from and actually fix it
+                    Console.WriteLine("COM Execption" + e);
+                }
             }
         }
 

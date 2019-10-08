@@ -68,7 +68,7 @@ namespace NK2Tray
 
             foreach (var fader in midiDevice.faders)
             {
-                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber} - {(fader.assigned ? fader.assignment.label : "")}");
+                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - {(fader.assigned ? fader.assignment.label : "")}");
                 trayMenu.MenuItems.Add(faderMenu);
 
                 // Add master mixerSession to menu
