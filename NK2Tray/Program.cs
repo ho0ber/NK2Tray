@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -79,7 +80,33 @@ namespace NK2Tray
                 // Add application mixer sessions to each fader
                 foreach (var mixerSession in mixerSessions)
                 {
+
+                    
+                    
                     MenuItem si = new MenuItem(mixerSession.label, AssignFader);
+
+                    //TODO
+                    // properly handle exception or better check if icons are present
+                    // set icon to context menu
+                    try
+                    {
+                        if (mixerSession.audioSessions[0].IsSystemSoundsSession)
+                        {
+                            var iconAddress = mixerSession.audioSessions[0].IconPath.Split(',');
+                            var icon = IconExtractor.Extract(iconAddress[0], int.Parse(iconAddress[1]), true);
+                            Bitmap bmp = icon.ToBitmap();
+                        }
+                        else
+                        {
+                            Process process = Process.GetProcessById((int)mixerSession.audioSessions[0].GetProcessID);
+                            Bitmap bmp = Icon.ExtractAssociatedIcon(process.MainModule.FileName).ToBitmap();
+                        };
+                    }
+                    catch (Exception)
+                    {
+                        
+                    }
+
                     si.Tag = new object[] { fader, mixerSession };
                     faderMenu.MenuItems.Add(si);
                 }
