@@ -215,14 +215,16 @@ namespace NK2Tray
                 if (GetValue(e.MidiEvent) != 127) // Only on button-down
                     return true;
 
-                Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
+                
                 if (assigned)
                 {
+                    Console.WriteLine($@"Unassigned fader {faderNumber}");
                     Unassign();
                     parent.SaveAssignments();
                 }
                 else
                 {
+                    Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
                     var pid = WindowTools.GetForegroundPID();
                     var mixerSession = parent.audioDevice.FindMixerSessions(pid);
                     if (mixerSession != null)

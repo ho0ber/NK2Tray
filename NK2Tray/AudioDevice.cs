@@ -151,6 +151,18 @@ namespace NK2Tray
                     if (session.GetProcessID == pid)
                         return mixerSession;
 
+            // if mixer session was not found becuase the pid does not match the pid of any audio session try finding it by process name
+            // this is necessary since chrome and some other applications have some weired process structure
+            Process process = Process.GetProcessById(pid);
+
+            foreach (var mixerSession in mixerSessions)
+            {
+                if (mixerSession.label.Equals(process.ProcessName))
+                {
+                    return mixerSession;
+                }
+            }
+
             return null;
         }
     }
