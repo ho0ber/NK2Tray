@@ -29,6 +29,11 @@ namespace NK2Tray
 
             trayIcon.Visible = true;
 
+            SetupDevice();
+        }
+
+        private Boolean SetupDevice()
+        {
             audioDevice = new AudioDevice();
 
             midiDevice = new NanoKontrol2(audioDevice);
@@ -36,6 +41,8 @@ namespace NK2Tray
                 midiDevice = new XtouchMini(audioDevice);
 
             audioDevice.midiDevice = midiDevice;
+
+            return midiDevice.Found;
         }
 
         private void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
@@ -65,6 +72,16 @@ namespace NK2Tray
 
             var mixerSessions = audioDevice.GetMixerSessions();
             var masterMixerSession = new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject());
+
+            // Dont create context menu if no midi device is connected
+            if(!midiDevice.Found)
+            {
+                if (!SetupDevice()) // This setup call can be removed once proper lifecycle management is implemented, for now this also adds a nice way to reconnect the controller
+                {
+                    MessageBox.Show("No midi device detected. Are you sure your device is plugged in correctly ?");
+                    return;
+                }
+            }
 
             foreach (var fader in midiDevice.faders)
             {
