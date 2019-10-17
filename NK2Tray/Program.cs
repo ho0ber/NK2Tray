@@ -73,6 +73,8 @@ namespace NK2Tray
             var mixerSessions = audioDevice.GetMixerSessions();
             var masterMixerSession = new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject());
 
+            var focusMixerSession = new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject());
+            
             // Dont create context menu if no midi device is connected
             if(!midiDevice.Found)
             {
@@ -92,6 +94,11 @@ namespace NK2Tray
                 MenuItem masterItem = new MenuItem(masterMixerSession.label, AssignFader);
                 masterItem.Tag = new object[] { fader, masterMixerSession };
                 faderMenu.MenuItems.Add(masterItem);
+
+                // Add focus mixerSession to menu
+                MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
+                focusItem.Tag = new object[] { fader, focusMixerSession };
+                faderMenu.MenuItems.Add(focusItem);
 
                 // Add application mixer sessions to each fader
                 foreach (var mixerSession in mixerSessions)
