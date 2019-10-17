@@ -14,6 +14,9 @@ namespace NK2Tray
         Focus
     }
 
+    /// <summary>
+    /// A <c>MixerSession</c> represents a running application and all audio sessions belonging to it.
+    /// </summary>
     public class MixerSession
     {
         public string label;
