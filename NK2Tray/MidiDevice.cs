@@ -2,6 +2,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 
@@ -134,47 +136,54 @@ namespace NK2Tray
             buttons = new List<Button>();
         }
 
+
         public void LoadAssignments()
         {
-                bool foundAssignments = false;
+            bool foundAssignments = false;
 
-                foreach (var fader in faders)
+            foreach (var fader in faders)
+            {
+                Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
+                var ident = ConfigSaver.GetAppSettings(fader.faderNumber.ToString());
+
+                Console.WriteLine("Got setting: " + ident);
+                if (ident != null)
                 {
-                    Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
-                    var ident = GetAppSettings(fader.faderNumber.ToString());
-
-                    Console.WriteLine("Got setting: " + ident);
-                    if (ident != null)
+                    if (ident == "__MASTER__")
                     {
-                        if (ident == "__MASTER__")
-                        {
-                            foundAssignments = true;
-                            fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
-                        }
-                        else if (ident.Length > 0)
-                        {
-                            foundAssignments = true;
-                            var matchingSession = audioDevice.FindMixerSessions(ident);
-                            if (matchingSession != null)
-                                fader.Assign(matchingSession);
-                            else
-                                fader.AssignInactive(ident);
-                        }
+                        foundAssignments = true;
+                        fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                    }
+                    if (ident == "__FOCUS__")
+                    {
+                        foundAssignments = true;
+                        fader.Assign(new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject()));
+                    }
+                    else if (ident.Length > 0)
+                    {
+                        foundAssignments = true;
+                        var matchingSession = audioDevice.FindMixerSessions(ident);
+                        if (matchingSession != null)
+                            fader.Assign(matchingSession);
                         else
-                        {
-                            fader.Unassign();
-                        }
+                            fader.AssignInactive(ident);
                     }
-                }
-
-                if (!foundAssignments)
-                {
-                    if (faders.Count > 0)
+                    else
                     {
-                        faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
-                        SaveAssignments();
+                        fader.Unassign();
                     }
                 }
+            }
+
+            // Load fader 8 as master volume control as default if no faders are set
+            if (!foundAssignments)
+            {
+                if (faders.Count > 0)
+                {
+                    faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                    SaveAssignments();
+                }
+            }
         }
 
         public void SaveAssignments()
@@ -185,54 +194,16 @@ namespace NK2Tray
                 if (fader.assigned)
                 {
                     if (fader.assignment.sessionType == SessionType.Master)
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                    else if (fader.assignment.sessionType == SessionType.Focus)
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__FOCUS__");
                     else
-                        AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
                 }
                 else
-                    AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
+                    ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
             }
         }
 
-        public static void AddOrUpdateAppSettings(string key, string value)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                if (settings[key] == null)
-                {
-                    settings.Add(key, value);
-                }
-                else
-                {
-                    settings[key].Value = value;
-                }
-                configFile.Save(ConfigurationSaveMode.Modified);
-                ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
-            }
-            catch (ConfigurationErrorsException)
-            {
-                Console.WriteLine("Error writing app settings");
-            }
-        }
-
-        public static string GetAppSettings(string key)
-        {
-            try
-            {
-                var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-                var settings = configFile.AppSettings.Settings;
-                if (settings[key] != null)
-                    return settings[key].Value;
-                else
-                    return null;
-            }
-            catch
-            {
-                Console.WriteLine("Error getting app settings");
-            }
-            return null;
-        }
     }
 }

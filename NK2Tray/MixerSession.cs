@@ -10,9 +10,13 @@ namespace NK2Tray
     {
         Application,
         SystemSounds,
-        Master
+        Master,
+        Focus
     }
 
+    /// <summary>
+    /// A <c>MixerSession</c> represents a running application and all audio sessions belonging to it.
+    /// </summary>
     public class MixerSession
     {
         public string label;
@@ -83,6 +87,19 @@ namespace NK2Tray
                     //TODO find out where this exception comes from and actually fix it
                     Console.WriteLine("COM Execption" + e);
                 }
+            } 
+            else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                // Check if null since mixer session might not exist for currently focused window
+                if (mixerSession != null)
+                {
+                    foreach (var session in mixerSession.audioSessions)
+                    {
+                        session.SimpleAudioVolume.Volume = volume;
+                    }
+                }
             }
         }
 
@@ -122,6 +139,23 @@ namespace NK2Tray
                     if (curVol > 1)
                         curVol = 1;
                     return curVol;
+                }
+            }
+            else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                if (mixerSession != null)
+                {
+                    foreach (var session in mixerSession.audioSessions)
+                    {
+                        var curVol = session.SimpleAudioVolume.Volume;
+                        if (curVol < 0)
+                            curVol = 0;
+                        if (curVol > 1)
+                            curVol = 1;
+                        return curVol;
+                    }
                 }
             }
             return -1;
@@ -180,6 +214,25 @@ namespace NK2Tray
                 }
 
             }
+            else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                if( mixerSession != null)
+                {
+                    foreach (var session in mixerSession.audioSessions)
+                    {
+                        var curVol = session.SimpleAudioVolume.Volume;
+                        curVol += change;
+                        if (curVol < 0)
+                            curVol = 0;
+                        if (curVol > 1)
+                            curVol = 1;
+                        session.SimpleAudioVolume.Volume = curVol;
+                        retVol = curVol;
+                    }
+                }
+            }
             return retVol;
         }
 
@@ -210,6 +263,18 @@ namespace NK2Tray
                     deviceVolume.Mute = muted;
 
                     Console.WriteLine("RETRY: toggling mute on master volume");
+                    return muted;
+                }
+            }
+            else if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = parent.FindMixerSessions(pid);
+                if (mixerSession != null)
+                {
+                    var muted = !mixerSession.audioSessions.First().SimpleAudioVolume.Mute;
+                    foreach (var session in mixerSession.audioSessions)
+                        session.SimpleAudioVolume.Mute = muted;
                     return muted;
                 }
             }

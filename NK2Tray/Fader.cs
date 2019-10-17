@@ -132,8 +132,8 @@ namespace NK2Tray
 
         private void convertToApplicationPath(string ident)
         {
-            if (ident != null && ident != "")
-            { 
+            if (ident != null && ident != "" && ident != "__MASTER__" && ident != "__FOCUS__") // TODO cleaner handling of special fader types
+            {
                 //"{0.0.0.00000000}.{...}|\\Device\\HarddiskVolume8\\Users\\Dr. Locke\\AppData\\Roaming\\Spotify\\Spotify.exe%b{00000000-0000-0000-0000-000000000000}"
                 int deviceIndex = ident.IndexOf("\\Device");
                 int endIndex = ident.IndexOf("%b{");
