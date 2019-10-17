@@ -154,7 +154,7 @@ namespace NK2Tray
                         foundAssignments = true;
                         fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
                     }
-                    if (ident == "__FOCUS__")
+                    else if (ident == "__FOCUS__")
                     {
                         foundAssignments = true;
                         fader.Assign(new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject()));
