@@ -65,6 +65,22 @@ namespace NK2Tray
             Application.Exit();
         }
 
+        private String getProgramLabel(Fader fader)
+        {
+            if (fader.assigned)
+                return fader.assignment.label;
+
+            if(fader.identifier.Length > 0 && fader.identifier.Contains(".exe"))
+            {
+                String identifier = fader.identifier;
+                int lastBackSlash = identifier.LastIndexOf('\\') + 1;
+                int programNameLength = identifier.IndexOf(".exe") - lastBackSlash;
+                String progamName = identifier.Substring(lastBackSlash, programNameLength);
+                return progamName;
+            }
+            return "";
+        }
+
         private void OnPopup(object sender, EventArgs e)
         {
             ContextMenu trayMenu = (ContextMenu)sender;
@@ -85,9 +101,11 @@ namespace NK2Tray
                 }
             }
 
+
+
             foreach (var fader in midiDevice.faders)
             {
-                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - {(fader.assigned ? fader.assignment.label : "")}");
+                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
                 trayMenu.MenuItems.Add(faderMenu);
 
                 // Add master mixerSession to menu
