@@ -37,6 +37,14 @@ Also, I'm pretty sure I have to release this under the Ms-PL license if I want i
 - [ ] Support for common amazon clones of nanokontrol2
 - [ ] (Eventual) support for advanced control surface features (motorized faders, volume meters, scribble strips)
 
+##Currently Supported Devices
+At the moment the support for the MIDI devices is limited. It will be extended in the future.
+
+The currently supported MIDI devices are:
+* Korg nanoKONTROL2
+* Behringer Xouch Mini (only in MC Mode)
+
 ## Attribution & Acknowledgements
  * <img src="https://raw.githubusercontent.com/ho0ber/NK2Tray/master/NK2Tray/nk2tray.ico" height="24"> [NK2 Tray icon](NK2Tray/nk2tray.ico) courtesy of [Dave Savic](https://www.iconfinder.com/icons/2001872/blue_level_levels_mixer_settings_shadow_volume_icon)
  * Midi and Core Audio thanks to [NAudio](https://github.com/naudio/NAudio)
+
