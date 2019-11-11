@@ -94,7 +94,18 @@ namespace NK2Tray
                 fader.SetHandling(false);
             }
 
-            var midiController = (ControlChangeEvent)e.MidiEvent;
+            ControlChangeEvent midiController = null;
+            
+            try
+            {
+                midiController = (ControlChangeEvent)e.MidiEvent;
+            }
+            catch (System.InvalidCastException exc)
+            {
+                Console.WriteLine($@"Error when setting master volume: {exc.Message}");
+                return;
+            }
+
             if (midiController == null)
                 return;
             //key UP...!
