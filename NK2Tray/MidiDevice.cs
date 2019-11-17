@@ -102,7 +102,6 @@ namespace NK2Tray
             }
             catch (System.InvalidCastException exc)
             {
-                Console.WriteLine($@"Error when setting master volume: {exc.Message}");
                 return;
             }
 
