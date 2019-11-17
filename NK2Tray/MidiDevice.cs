@@ -94,31 +94,31 @@ namespace NK2Tray
                 fader.SetHandling(false);
             }
 
-            ControlChangeEvent midiController = null;
-            
-            try
-            {
-                midiController = (ControlChangeEvent)e.MidiEvent;
-            }
-            catch (System.InvalidCastException exc)
-            {
-                return;
-            }
-
-            if (midiController == null)
-                return;
-            //key UP...!
-            if (midiController.ControllerValue == 0)
-                return;
-
-            var obj = buttonsMappingTable[(int)midiController.Controller];
-            if (obj != null)
-            {
-                Button button = (Button)obj;
-                button.HandleEvent(e, this);
-                button.SetHandling(false);
-            }
-            else
+            //ControlChangeEvent midiController = null;
+            //
+            //try
+            //{
+            //    midiController = (ControlChangeEvent)e.MidiEvent;
+            //}
+            //catch (System.InvalidCastException exc)
+            //{
+            //    return;
+            //}
+            //
+            //if (midiController == null)
+            //    return;
+            ////key UP...!
+            //if (midiController.ControllerValue == 0)
+            //    return;
+            //
+            //var obj = buttonsMappingTable[(int)midiController.Controller];
+            //if (obj != null)
+            //{
+            //    Button button = (Button)obj;
+            //    button.HandleEvent(e, this);
+            //    button.SetHandling(false);
+            //}
+            //else
             {
                 foreach (var button in buttons)
                 {
