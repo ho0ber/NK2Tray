@@ -14,6 +14,10 @@ namespace NK2Tray
 
     public class Button
     {
+        private bool activeHandling = false;
+
+        private bool light = false;
+
         public ButtonType buttonType;
         public int controller;
         public MidiCommandCode commandCode;
@@ -32,66 +36,85 @@ namespace NK2Tray
 
         public void SetLight(bool state)
         {
+            light = state;
             if (commandCode == MidiCommandCode.ControlChange)
                 midiOut.Send(new ControlChangeEvent(0, channel, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
             else if (commandCode == MidiCommandCode.NoteOn)
                 midiOut.Send(new NoteOnEvent(0, 1, controller, state ? 127 : 0, 0).GetAsShortMessage());
         }
 
-        public bool HandleEvent(MidiInMessageEventArgs e)
+        public bool HandleEvent(MidiInMessageEventArgs e, MidiDevice device)
         {
-            if (e.MidiEvent.CommandCode != commandCode)
-                return false;
-
-            int c;
-
-            if (commandCode == MidiCommandCode.ControlChange)
+            if (!IsHandling())
             {
-                var me = (ControlChangeEvent)e.MidiEvent;
+                SetHandling(true);
 
-                if (me.Channel != channel || me.ControllerValue != 127) // Only on correct channel and button-down (127)
+                if (e.MidiEvent.CommandCode != commandCode)
                     return false;
 
-                c = (int)me.Controller;
-            }
-            else if (commandCode == MidiCommandCode.NoteOn)
-            {
-                var me = (NoteEvent)e.MidiEvent;
+                int c;
 
-                if (me.Channel != channel || me.Velocity != 127) // Only on correct channel and button-down (127)
-                    return false;
-
-                c = me.NoteNumber;
-            }
-            else
-                return false;
-
-            if (c == controller)
-            {
-                switch (buttonType)
+                if (commandCode == MidiCommandCode.ControlChange)
                 {
-                    case ButtonType.MediaNext:
-                        MediaTools.Next();
-                        break;
-                    case ButtonType.MediaPrevious:
-                        MediaTools.Previous();
-                        break;
-                    case ButtonType.MediaStop:
-                        MediaTools.Stop();
-                        break;
-                    case ButtonType.MediaPlay:
-                        MediaTools.Play();
-                        break;
-                    case ButtonType.MediaRecord:
-                        throw new Exception("Kaboom");
-                    default:
-                        break;
+                    var me = (ControlChangeEvent)e.MidiEvent;
+
+                    if (me.Channel != channel || me.ControllerValue != 127) // Only on correct channel and button-down (127)
+                        return false;
+
+                    c = (int)me.Controller;
                 }
-                return true;
+                else if (commandCode == MidiCommandCode.NoteOn)
+                {
+                    var me = (NoteEvent)e.MidiEvent;
+
+                    if (me.Channel != channel || me.Velocity != 127) // Only on correct channel and button-down (127)
+                        return false;
+
+                    c = me.NoteNumber;
+                }
+                else
+                    return false;
+
+                if (c == controller)
+                {
+                    switch (buttonType)
+                    {
+                        case ButtonType.MediaNext:
+                            MediaTools.Next();
+                            break;
+                        case ButtonType.MediaPrevious:
+                            MediaTools.Previous();
+                            break;
+                        case ButtonType.MediaStop:
+                            MediaTools.Stop();
+                            break;
+                        case ButtonType.MediaPlay:
+                            MediaTools.Play();
+                            break;
+                        case ButtonType.MediaRecord:
+                            device.LightShow();
+                            break;
+                        default:
+                            break;
+                    }
+                    return true;
+                }
             }
 
             return false;
-         }
+        }
+
+        public bool IsHandling()
+        {
+            return activeHandling;
+        }
+
+        public void SetHandling(bool handling)
+        {
+            activeHandling = handling;
+        }
+
+        public bool GetLight() { return light; }
 
     }
 }

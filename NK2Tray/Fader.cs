@@ -53,6 +53,12 @@ namespace NK2Tray
 
     public class Fader
     {
+        private bool activeHandling = false;
+
+        private bool selectLight = false;
+        private bool muteLight = false;
+        private bool recordLight = false;
+
         public int faderNumber;
         public FaderDef faderDef;
         public MixerSession assignment;
@@ -60,6 +66,8 @@ namespace NK2Tray
         public MidiOut midiOut;
         public MidiDevice parent;
         public string identifier;
+        public string applicationPath;
+        public string applicationName;
 
         public Fader(MidiDevice midiDevice, int faderNum)
         {
@@ -95,6 +103,8 @@ namespace NK2Tray
             assigned = true;
             assignment = mixerSession;
             identifier = mixerSession.sessionIdentifier;
+            convertToApplicationPath(identifier);
+            applicationName = mixerSession.label;
             SetSelectLight(true);
             SetRecordLight(false);
             if (faderDef.delta)
@@ -104,6 +114,7 @@ namespace NK2Tray
         public void AssignInactive(string ident)
         {
             identifier = ident;
+            convertToApplicationPath(identifier);
             assigned = false;
             SetSelectLight(true);
             SetRecordLight(true);
@@ -119,20 +130,41 @@ namespace NK2Tray
                 parent.SetVolumeIndicator(faderNumber, -1);
         }
 
+        private void convertToApplicationPath(string ident)
+        {
+            if (ident != null && ident != "" && ident != "__MASTER__" && ident != "__FOCUS__") // TODO cleaner handling of special fader types
+            {
+                //"{0.0.0.00000000}.{...}|\\Device\\HarddiskVolume8\\Users\\Dr. Locke\\AppData\\Roaming\\Spotify\\Spotify.exe%b{00000000-0000-0000-0000-000000000000}"
+                int deviceIndex = ident.IndexOf("\\Device");
+                int endIndex = ident.IndexOf("%b{");
+                ident = ident.Substring(deviceIndex, endIndex - deviceIndex);
+                applicationPath = DevicePathMapper.FromDevicePath(ident);
+            }
+        }
+
         public void SetSelectLight(bool state)
         {
+            selectLight = state;
             parent.SetLight(selectController, state);
         }
 
         public void SetMuteLight(bool state)
         {
+            muteLight = state;
             parent.SetLight(muteController, state);
         }
 
         public void SetRecordLight( bool state)
         {
+            recordLight = state;
             parent.SetLight(recordController, state);
         }
+
+        public bool GetSelectLight(){ return selectLight; }
+    
+        public bool GetMuteLight() { return muteLight; }
+
+        public bool GetRecordLight() { return recordLight; }
 
         public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset, int channel=-1)
         {
@@ -185,79 +217,101 @@ namespace NK2Tray
 
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
-            // Fader match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
+            if (!IsHandling())
             {
-                if (faderDef.delta)
-                {
-                    float curVol;
-                    var val = GetValue(e.MidiEvent);
-                    if (val > faderDef.range / 2)
-                        curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
-                    else
-                        curVol = assignment.ChangeVolume(val / faderDef.range);
-                    parent.SetVolumeIndicator(faderNumber, curVol);
-                }
-                else
-                {
-                    assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
-                }
+                SetHandling(true);
 
-                if (assignment.IsDead())
-                    SetRecordLight(true);
-
-                return true;
-            }
-
-            // Select match
-            if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
-            {
-                if (GetValue(e.MidiEvent) != 127) // Only on button-down
-                    return true;
-
-                
-                if (assigned)
+                // Fader match
+                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
                 {
-                    Console.WriteLine($@"Unassigned fader {faderNumber}");
-                    Unassign();
-                    parent.SaveAssignments();
-                }
-                else
-                {
-                    Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
-                    var pid = WindowTools.GetForegroundPID();
-                    var mixerSession = parent.audioDevice.FindMixerSessions(pid);
-                    if (mixerSession != null)
+                    if (faderDef.delta)
                     {
-                        Assign(mixerSession);
+                        float curVol;
+                        var val = GetValue(e.MidiEvent);
+                        if (val > faderDef.range / 2)
+                            curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
+                        else
+                            curVol = assignment.ChangeVolume(val / faderDef.range);
+                        parent.SetVolumeIndicator(faderNumber, curVol);
+                    }
+                    else
+                    {
+                        assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
+                    }
+
+                    if (assignment.IsDead())
+                        SetRecordLight(true);
+
+                    return true;
+                }
+
+                // Select match
+                if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
+                {
+                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
+                        return true;
+
+                    Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
+                    if (assigned)
+                    {
+                        Unassign();
                         parent.SaveAssignments();
                     }
                     else
-                        Console.WriteLine($@"MixerSession not found for pid {pid}");
-                }
-                return true;
-            }
-
-            // Mute match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
-            {
-                if (GetValue(e.MidiEvent) != 127) // Only on button-down
+                    {
+                        var pid = WindowTools.GetForegroundPID();
+                        var mixerSession = parent.audioDevice.FindMixerSessions(pid);
+                        if (mixerSession != null)
+                        {
+                            Assign(mixerSession);
+                            parent.SaveAssignments();
+                        }
+                        else
+                            Console.WriteLine($@"MixerSession not found for pid {pid}");
+                    }
                     return true;
+                }
 
-                SetMuteLight(assignment.ToggleMute());
-                if (assignment.IsDead())
-                    SetRecordLight(true);
-                return true;
+                // Mute match
+                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
+                {
+                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
+                        return true;
+
+                    SetMuteLight(assignment.ToggleMute());
+                    if (assignment.IsDead())
+                        SetRecordLight(true);
+                    return true;
+                }
+
+                // Record match
+                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride))
+                {
+                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
+                        return true;
+
+                    if (WindowTools.IsProcessByNameRunning(applicationName))
+                        SetRecordLight(false);
+                    else
+                    {
+                        WindowTools.StartApplication(applicationPath);
+                    }
+
+                    return true;
+                }
             }
+                return false;
 
-            // Record match
-            if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride))
-            {
-                SetRecordLight(assignment.IsDead());
-                return true;
-            }
-            return false;
+        }
 
+        public bool IsHandling()
+        {
+            return activeHandling;
+        }
+
+        public void SetHandling(bool handling)
+        {
+            activeHandling = handling;
         }
     }
 }

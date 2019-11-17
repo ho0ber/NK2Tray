@@ -1,6 +1,10 @@
 ﻿using NAudio.Midi;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections;
+using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 
 namespace NK2Tray
@@ -24,6 +28,7 @@ namespace NK2Tray
 
         public List<Fader> faders;
         public List<Button> buttons;
+        public Hashtable buttonsMappingTable;
 
         public AudioDevice audioDevice;
 
@@ -81,20 +86,55 @@ namespace NK2Tray
 
         public virtual void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            WindowTools.Dump(e.MidiEvent);
+            //WindowTools.Dump(e.MidiEvent);
 
             foreach (var fader in faders)
+            {
                 fader.HandleEvent(e);
+                fader.SetHandling(false);
+            }
 
-            foreach (var button in buttons)
-                button.HandleEvent(e);
+            //ControlChangeEvent midiController = null;
+            //
+            //try
+            //{
+            //    midiController = (ControlChangeEvent)e.MidiEvent;
+            //}
+            //catch (System.InvalidCastException exc)
+            //{
+            //    return;
+            //}
+            //
+            //if (midiController == null)
+            //    return;
+            ////key UP...!
+            //if (midiController.ControllerValue == 0)
+            //    return;
+            //
+            //var obj = buttonsMappingTable[(int)midiController.Controller];
+            //if (obj != null)
+            //{
+            //    Button button = (Button)obj;
+            //    button.HandleEvent(e, this);
+            //    button.SetHandling(false);
+            //}
+            //else
+            {
+                foreach (var button in buttons)
+                {
+                    button.HandleEvent(e, this);
+                    button.SetHandling(false);
+                }
+            }
         }
 
         public virtual void ResetAllLights() { }
 
+        public virtual void LightShow() { }
+
         public virtual void SetVolumeIndicator(int fader, float level) { }
 
-        public virtual void SetLight(int controller, bool state) { }
+        public virtual void SetLight(int controller, bool state) {}
 
         public virtual void InitFaders()
         {
@@ -105,6 +145,7 @@ namespace NK2Tray
         {
             buttons = new List<Button>();
         }
+
 
         public void LoadAssignments()
         {
@@ -123,7 +164,7 @@ namespace NK2Tray
                         foundAssignments = true;
                         fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
                     }
-                    if (ident == "__FOCUS__")
+                    else if (ident == "__FOCUS__")
                     {
                         foundAssignments = true;
                         fader.Assign(new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject()));
