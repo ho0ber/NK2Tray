@@ -1,5 +1,6 @@
 ﻿using NAudio.Midi;
 using System;
+using System.Collections.Generic;
 
 namespace NK2Tray
 {
@@ -23,7 +24,7 @@ namespace NK2Tray
         public int selectChannelOverride;
         public int muteChannelOverride;
         public int recordChannelOverride;
-
+        
         public FaderDef(bool _delta, float _range, int _channel,
             bool _selectPresent, bool _mutePresent, bool _recordPresent,
             int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset,
@@ -60,6 +61,11 @@ namespace NK2Tray
         public MidiOut midiOut;
         public MidiDevice parent;
         public string identifier;
+
+
+        private List<MixerSession> sessionsList;
+        private long currentTick = 0;
+        private int listUpdateDelayMili = 1000;
 
         public Fader(MidiDevice midiDevice, int faderNum)
         {
@@ -188,24 +194,33 @@ namespace NK2Tray
             // Fader match
             if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
             {
-                if (faderDef.delta)
+                if (currentTick + listUpdateDelayMili < DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond)  //avoid stutter - overflow
                 {
-                    float curVol;
-                    var val = GetValue(e.MidiEvent);
-                    if (val > faderDef.range / 2)
-                        curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
-                    else
-                        curVol = assignment.ChangeVolume(val / faderDef.range);
-                    parent.SetVolumeIndicator(faderNumber, curVol);
+                    sessionsList = assignment.devices.GetSimilarMixerSessions(assignment.sessionIdentifier);
+                    currentTick = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                 }
-                else
-                {
-                    assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
-                }
+                
+                if (sessionsList!=null)
+                    foreach (MixerSession session in sessionsList)
+                    {
+                        if (faderDef.delta)
+                        {
+                            float curVol;
+                            var val = GetValue(e.MidiEvent);
+                            if (val > faderDef.range / 2)
+                                curVol = session.ChangeVolume((faderDef.range - val) / faderDef.range);
+                            else
+                                curVol = session.ChangeVolume(val / faderDef.range);
+                            parent.SetVolumeIndicator(faderNumber, curVol);
+                        }
+                        else
+                        {
+                            session.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
+                        }
 
-                if (assignment.IsDead())
-                    SetRecordLight(true);
-
+                        if (session.IsDead())
+                            SetRecordLight(true);                    
+                    }
                 return true;
             }
 

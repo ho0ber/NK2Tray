@@ -33,7 +33,7 @@ namespace NK2Tray
             sessionIdentifier = identifier;
             audioSessions = sessions;
             sessionType = sesType;
-            label = devices.GetDeviceByIdentifier(identifier).FriendlyName + ": " + labl;
+            label = labl;
         }
 
         public MixerSession(String deviceIdentifier, AudioDevice devices, string labl, SessionType sesType)

@@ -85,10 +85,11 @@ namespace NK2Tray
                     var session = sessions[i];
                     if (session.State != AudioSessionState.AudioSessionStateExpired)
                     {
-                        if (!sessionsByIdent.ContainsKey(session.GetSessionIdentifier))
-                            sessionsByIdent[session.GetSessionIdentifier] = new List<AudioSessionControl>();
+                        String searchIdentifier = session.GetSessionIdentifier.Substring(session.GetSessionIdentifier.IndexOf("|") + 1, session.GetSessionIdentifier.Length - session.GetSessionIdentifier.IndexOf("|") - 1);
+                        if (!sessionsByIdent.ContainsKey(searchIdentifier))
+                            sessionsByIdent[searchIdentifier] = new List<AudioSessionControl>();
 
-                        sessionsByIdent[session.GetSessionIdentifier].Add(session);
+                        sessionsByIdent[searchIdentifier].Add(session);
                     }
                 }
             }
@@ -107,6 +108,61 @@ namespace NK2Tray
                 if (HasSystemSoundsSession(identSessions))
                     label = "System Sounds";
                                 
+                var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
+                mixerSessions.Add(mixerSession);
+            }
+
+            return mixerSessions;
+        }
+
+        public List<MixerSession> GetSimilarMixerSessions(String sessionIdentifier)
+        {
+            if (sessionIdentifier == null) return null;
+
+            String searchIdentifier;
+            if (sessionIdentifier.IndexOf("|") > -1)  //save retro-compatibility
+                searchIdentifier = sessionIdentifier.Substring(sessionIdentifier.IndexOf("|") + 1, sessionIdentifier.Length - sessionIdentifier.IndexOf("|") - 1);
+            else
+                searchIdentifier = sessionIdentifier;
+
+             var mixerSessions = new List<MixerSession>();
+            var sessionsByIdent = new Dictionary<String, List<AudioSessionControl>>();
+
+            UpdateDevices();
+            for (int j = 0; j < devices.Count; j++)
+            {
+                var sessions = devices[j].AudioSessionManager.Sessions;
+
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    var session = sessions[i];
+                    if (session.State != AudioSessionState.AudioSessionStateExpired)
+                    {
+                        if (session.GetSessionIdentifier.Contains(searchIdentifier))
+                        {
+                            if (!sessionsByIdent.ContainsKey(searchIdentifier))
+                                sessionsByIdent[searchIdentifier] = new List<AudioSessionControl>();
+
+                            sessionsByIdent[searchIdentifier].Add(session);
+                        }
+                    }
+                }
+            }
+
+            foreach (var ident in sessionsByIdent.Keys.ToList())
+            {
+                var identSessions = sessionsByIdent[ident]; //.OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
+
+                bool dup = identSessions.Count > 1;
+
+                SessionType sessionType = SessionType.Application;
+
+                var process = FindLivingProcess(identSessions);
+                string label = (process != null) ? process.ProcessName : ident;
+
+                if (HasSystemSoundsSession(identSessions))
+                    label = "System Sounds";
+
                 var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
                 mixerSessions.Add(mixerSession);
             }
@@ -168,7 +224,7 @@ namespace NK2Tray
             {
                 foreach (var session in mixerSession.audioSessions)
                 {
-                    if (session.GetSessionIdentifier == sessionIdentifier)
+                    if (session.GetSessionIdentifier.Contains(sessionIdentifier))
                         return mixerSession;
                 }
             }
