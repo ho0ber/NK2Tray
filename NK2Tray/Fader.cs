@@ -226,7 +226,7 @@ namespace NK2Tray
                 {
                     Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
                     var pid = WindowTools.GetForegroundPID();
-                    var mixerSession = parent.audioDevice.FindMixerSessions(pid);
+                    var mixerSession = parent.audioDevices.FindMixerSessions(pid);
                     if (mixerSession != null)
                     {
                         Assign(mixerSession);

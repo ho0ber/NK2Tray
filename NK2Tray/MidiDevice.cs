@@ -1,4 +1,5 @@
-﻿using NAudio.Midi;
+﻿using NAudio.CoreAudioApi;
+using NAudio.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace NK2Tray
         public List<Fader> faders;
         public List<Button> buttons;
 
-        public AudioDevice audioDevice;
+        public AudioDevice audioDevices;
 
         public virtual string SearchString => "wobbo";
 
@@ -118,20 +119,22 @@ namespace NK2Tray
                 Console.WriteLine("Got setting: " + ident);
                 if (ident != null)
                 {
-                    if (ident == "__MASTER__")
+                    if (ident.Equals("__FOCUS__") || (ident.Length>=9 && ident.Substring(0, 9).Equals("__FOCUS__")))
                     {
                         foundAssignments = true;
-                        fader.Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                        MMDevice mmDevice = audioDevices.GetDeviceByIdentifier(ident.IndexOf("|") >= 0 ? ident.Substring(ident.IndexOf("|")+1) : "");
+                        fader.Assign(new MixerSession(mmDevice.ID, audioDevices, "Focus", SessionType.Focus));
                     }
-                    if (ident == "__FOCUS__")
+                    if (ident.Equals("__MASTER__") || (ident.Length>=10 && ident.Substring(0, 10).Equals("__MASTER__")))
                     {
                         foundAssignments = true;
-                        fader.Assign(new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject()));
-                    }
+                        MMDevice mmDevice = audioDevices.GetDeviceByIdentifier(ident.IndexOf("|") >= 0 ? ident.Substring(ident.IndexOf("|")+1) : "");
+                        fader.Assign(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
+                    }                    
                     else if (ident.Length > 0)
                     {
                         foundAssignments = true;
-                        var matchingSession = audioDevice.FindMixerSessions(ident);
+                        var matchingSession = audioDevices.FindMixerSessions(ident);
                         if (matchingSession != null)
                             fader.Assign(matchingSession);
                         else
@@ -144,15 +147,18 @@ namespace NK2Tray
                 }
             }
 
+            
+            
             // Load fader 8 as master volume control as default if no faders are set
             if (!foundAssignments)
             {
                 if (faders.Count > 0)
                 {
-                    faders.Last().Assign(new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject()));
+                    faders.Last().Assign(new MixerSession(audioDevices.GetDeviceByIdentifier("").ID, audioDevices, "Master", SessionType.Master));
                     SaveAssignments();
                 }
             }
+            
         }
 
         public void SaveAssignments()
@@ -163,9 +169,9 @@ namespace NK2Tray
                 if (fader.assigned)
                 {
                     if (fader.assignment.sessionType == SessionType.Master)
-                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__");
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__|" + fader.assignment.parentDeviceIdentifier );
                     else if (fader.assignment.sessionType == SessionType.Focus)
-                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__FOCUS__");
+                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__FOCUS__|" + fader.assignment.parentDeviceIdentifier);
                     else
                         ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
                 }

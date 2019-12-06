@@ -23,26 +23,28 @@ namespace NK2Tray
         public string sessionIdentifier;
         public List<AudioSessionControl> audioSessions;
         public SessionType sessionType;
-        public AudioEndpointVolume deviceVolume;
-        public AudioDevice parent;
+        public AudioDevice devices;
+        public String parentDeviceIdentifier;
 
-        public MixerSession(AudioDevice audioDev, string labl, string identifier, List<AudioSessionControl> sessions, SessionType sesType)
+        public MixerSession(AudioDevice devices, string labl, string identifier, List<AudioSessionControl> sessions, SessionType sesType)
         {
-            parent = audioDev;
-            label = labl;
+            this.devices = devices;
+   
             sessionIdentifier = identifier;
             audioSessions = sessions;
             sessionType = sesType;
+            label = devices.GetDeviceByIdentifier(identifier).FriendlyName + ": " + labl;
         }
 
-        public MixerSession(AudioDevice audioDev, string labl, SessionType sesType, AudioEndpointVolume devVol)
+        public MixerSession(String deviceIdentifier, AudioDevice devices, string labl, SessionType sesType)
         {
-            parent = audioDev;
-            label = labl;
+            this.devices = devices;
+            
             sessionIdentifier = "";
             audioSessions = new List<AudioSessionControl>();
             sessionType = sesType;
-            deviceVolume = devVol;
+            parentDeviceIdentifier = deviceIdentifier;
+            label = devices.GetDeviceByIdentifier(deviceIdentifier).FriendlyName + ": " + labl;
         }
 
         public bool IsDead()
@@ -71,14 +73,14 @@ namespace NK2Tray
             {
                 try
                 {
-                    deviceVolume.MasterVolumeLevelScalar = volume;
+                    devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.MasterVolumeLevelScalar = volume;                                   
                 }
                 catch (System.Runtime.InteropServices.InvalidComObjectException e)
                 {
                     // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
                     // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
                     Console.WriteLine($@"Error when setting master volume: {e.Message}");
-                    deviceVolume = parent.GetDeviceVolumeObject();
+                    AudioEndpointVolume deviceVolume = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume;
                     deviceVolume.MasterVolumeLevelScalar = volume;
                     Console.WriteLine($@"RETRY: Setting master volume to {volume}");
                 }
@@ -87,11 +89,15 @@ namespace NK2Tray
                     //TODO find out where this exception comes from and actually fix it
                     Console.WriteLine("COM Execption" + e);
                 }
+                catch (System.InvalidCastException e)
+                {                    
+                    Console.WriteLine("InvalidCastException Exeception" + e);
+                }
             } 
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = parent.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSessions(pid);
                 // Check if null since mixer session might not exist for currently focused window
                 if (mixerSession != null)
                 {
@@ -121,7 +127,7 @@ namespace NK2Tray
             {
                 try
                 {
-                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    var curVol = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.MasterVolumeLevelScalar;
                     if (curVol < 0)
                         curVol = 0;
                     if (curVol > 1)
@@ -133,7 +139,7 @@ namespace NK2Tray
                     // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
                     // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
                     Console.WriteLine($@"Error when getting master volume: {e.Message}");
-                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    var curVol = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.MasterVolumeLevelScalar;
                     if (curVol < 0)
                         curVol = 0;
                     if (curVol > 1)
@@ -144,7 +150,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = parent.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSessions(pid);
                 if (mixerSession != null)
                 {
                     foreach (var session in mixerSession.audioSessions)
@@ -188,13 +194,13 @@ namespace NK2Tray
             {
                 try
                 {
-                    var curVol = deviceVolume.MasterVolumeLevelScalar;
+                    var curVol = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.MasterVolumeLevelScalar;
                     curVol += change;
                     if (curVol < 0)
                         curVol = 0;
                     if (curVol > 1)
                         curVol = 1;
-                    deviceVolume.MasterVolumeLevelScalar = curVol;
+                    devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.MasterVolumeLevelScalar = curVol;
                     retVol = curVol;
                 }
                 catch (System.Runtime.InteropServices.InvalidComObjectException e)
@@ -202,7 +208,7 @@ namespace NK2Tray
                     // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
                     // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
                     Console.WriteLine($@"Error when setting master volume: {e.Message}");
-                    deviceVolume = parent.GetDeviceVolumeObject();
+                    AudioEndpointVolume deviceVolume = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume;
                     var curVol = deviceVolume.MasterVolumeLevelScalar;
                     curVol += change;
                     if (curVol < 0)
@@ -217,7 +223,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = parent.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSessions(pid);
                 if( mixerSession != null)
                 {
                     foreach (var session in mixerSession.audioSessions)
@@ -249,8 +255,8 @@ namespace NK2Tray
             {
                 try
                 {
-                    var muted = !deviceVolume.Mute;
-                    deviceVolume.Mute = muted;
+                    var muted = !devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.Mute;
+                    devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.Mute = muted;
                     return muted;
                 }
                 catch (System.Runtime.InteropServices.InvalidComObjectException e)
@@ -258,7 +264,7 @@ namespace NK2Tray
                     // This catch handles the "COM object that has been separated from its underlying RCW cannot be used" issue.
                     // I believe this happens when we refresh the device when opening the menu, but this is fine for now.
                     Console.WriteLine($@"Error when toggling mute on master volume: {e.Message}");
-                    deviceVolume = parent.GetDeviceVolumeObject();
+                    AudioEndpointVolume deviceVolume = devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume;
                     var muted = !deviceVolume.Mute;
                     deviceVolume.Mute = muted;
 
@@ -269,7 +275,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = parent.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSessions(pid);
                 if (mixerSession != null)
                 {
                     var muted = !mixerSession.audioSessions.First().SimpleAudioVolume.Mute;

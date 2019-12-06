@@ -10,29 +10,36 @@ namespace NK2Tray
     public class AudioDevice
     {
         public MidiDevice midiDevice;
-        private MMDevice device;
-        private AudioEndpointVolume deviceVolume;
+        //private MMDevice device;
+        public MMDeviceCollection devices;
+        //private AudioEndpointVolume deviceVolume;
 
-        private void UpdateDevice()
+        private void UpdateDevices()
         {
             // Add audio devices to each fader menu items
             var deviceEnumerator = new MMDeviceEnumerator();
 
-            device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
-            deviceVolume = device.AudioEndpointVolume;
+            //device = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            //device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
+            //deviceVolume = device.AudioEndpointVolume;
+
+            devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            foreach(MMDevice mmDevice in devices)
+            {
+                mmDevice.AudioSessionManager.OnSessionCreated += OnSessionCreated;
+            }
         }
 
-        public AudioEndpointVolume GetDeviceVolumeObject()
+        public AudioEndpointVolume GetDeviceVolumeObject(String deviceIdentifier)
         {
             // Used to handle "COM object that has been separated from its underlying RCW cannot be used" issue.
-            UpdateDevice();
-            return deviceVolume;
+            UpdateDevices();
+            return GetDeviceByIdentifier(deviceIdentifier).AudioEndpointVolume;
         }
 
         private void OnSessionCreated(object sender, IAudioSessionControl newSession)
         {
-            Console.WriteLine("OnSessionCreated");
+            Console.WriteLine("OnSessionCreated");        
             midiDevice.LoadAssignments();
 
             // These correspond with the below events handlers
@@ -40,6 +47,8 @@ namespace NK2Tray
             //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
             //audioSession.RegisterEventClient(callbacks);
         }
+
+
 
         /*
         // Saving these for later because I'll definitely need them.
@@ -66,18 +75,21 @@ namespace NK2Tray
             var mixerSessions = new List<MixerSession>();
             var sessionsByIdent = new Dictionary<String, List<AudioSessionControl>>();
 
-            UpdateDevice();
-            var sessions = device.AudioSessionManager.Sessions;
-
-            for (int i = 0; i < sessions.Count; i++)
+            UpdateDevices();
+            for (int j = 0; j < devices.Count; j++)
             {
-                var session = sessions[i];
-                if (session.State != AudioSessionState.AudioSessionStateExpired)
-                {
-                    if (!sessionsByIdent.ContainsKey(session.GetSessionIdentifier))
-                        sessionsByIdent[session.GetSessionIdentifier] = new List<AudioSessionControl>();
+                var sessions = devices[j].AudioSessionManager.Sessions;
 
-                    sessionsByIdent[session.GetSessionIdentifier].Add(session);
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    var session = sessions[i];
+                    if (session.State != AudioSessionState.AudioSessionStateExpired)
+                    {
+                        if (!sessionsByIdent.ContainsKey(session.GetSessionIdentifier))
+                            sessionsByIdent[session.GetSessionIdentifier] = new List<AudioSessionControl>();
+
+                        sessionsByIdent[session.GetSessionIdentifier].Add(session);
+                    }
                 }
             }
 
@@ -94,12 +106,32 @@ namespace NK2Tray
 
                 if (HasSystemSoundsSession(identSessions))
                     label = "System Sounds";
-
+                                
                 var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
                 mixerSessions.Add(mixerSession);
             }
 
             return mixerSessions;
+        }
+
+        public MMDevice GetDeviceByIdentifier(String identifier)
+        {
+            UpdateDevices();
+
+            String deviceId = (identifier==null?"":identifier);
+            if (deviceId.IndexOf("|")>-1) { //work with session identifier also
+                deviceId = deviceId.Substring(0, deviceId.IndexOf("|"));
+            };
+
+            for (int i = 0; i < devices.Count; i++)
+            {
+                if (devices[i].ID.Equals(deviceId))
+                    return devices[i];
+            }
+
+            //return default if none found (config/save retro-compatibility)
+            var deviceEnumerator = new MMDeviceEnumerator();
+            return deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
         }
 
         public Process FindLivingProcess(List<AudioSessionControl> sessions)
