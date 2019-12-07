@@ -44,7 +44,11 @@ namespace NK2Tray
             audioSessions = new List<AudioSessionControl>();
             sessionType = sesType;
             parentDeviceIdentifier = deviceIdentifier;
-            label = devices.GetDeviceByIdentifier(deviceIdentifier).FriendlyName + ": " + labl;
+
+            if (sesType == SessionType.Focus)
+                label = "Focus";
+            else
+                label = devices.GetDeviceByIdentifier(deviceIdentifier).FriendlyName + ": " + labl;
         }
 
         public bool IsDead()
@@ -97,7 +101,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = devices.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSession(pid);
                 // Check if null since mixer session might not exist for currently focused window
                 if (mixerSession != null)
                 {
@@ -150,7 +154,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = devices.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSession(pid);
                 if (mixerSession != null)
                 {
                     foreach (var session in mixerSession.audioSessions)
@@ -223,7 +227,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = devices.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSession(pid);
                 if( mixerSession != null)
                 {
                     foreach (var session in mixerSession.audioSessions)
@@ -275,7 +279,7 @@ namespace NK2Tray
             else if (sessionType == SessionType.Focus)
             {
                 var pid = WindowTools.GetForegroundPID();
-                var mixerSession = devices.FindMixerSessions(pid);
+                var mixerSession = devices.FindMixerSession(pid);
                 if (mixerSession != null)
                 {
                     var muted = !mixerSession.audioSessions.First().SimpleAudioVolume.Mute;

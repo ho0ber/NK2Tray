@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
+
 namespace NK2Tray
 {
     public class SysTrayApp : Form
@@ -67,25 +68,38 @@ namespace NK2Tray
             Application.Exit();
         }
 
+        private String getProgramLabel(Fader fader)
+        {
+            if (fader.assigned)
+                return fader.assignment.label;
+
+            if(fader.identifier.Length > 0 && fader.identifier.Contains(".exe"))
+            {
+                String identifier = fader.identifier;
+                int lastBackSlash = identifier.LastIndexOf('\\') + 1;
+                int programNameLength = identifier.IndexOf(".exe") - lastBackSlash;
+                String progamName = identifier.Substring(lastBackSlash, programNameLength);
+                return progamName;
+            }
+            return "";
+        }
+
         private void OnPopup(object sender, EventArgs e)
         {
             ContextMenu trayMenu = (ContextMenu)sender;
             trayMenu.MenuItems.Clear();
 
-            var mixerSessions = audioDevices.GetMixerSessions();
+            var mixerSessions = audioDevices.GetCachedMixerSessions();
 
             var masterMixerSessionList = new List<MixerSession>();
             foreach(MMDevice mmDevice in audioDevices.devices)
             {
                 masterMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
             }
-
-            var focusMixerSessionList = new List<MixerSession>();
-            foreach (MMDevice mmDevice in audioDevices.devices)
-            {
-                focusMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Focus", SessionType.Focus));
-            }
             
+            MixerSession focusMixerSession;
+            focusMixerSession = new MixerSession("", audioDevices, "Focus", SessionType.Focus);
+                        
             // Dont create context menu if no midi device is connected
             if(!midiDevice.Found)
             {
@@ -95,10 +109,10 @@ namespace NK2Tray
                     return;
                 }
             }
-
+                       
             foreach (var fader in midiDevice.faders)
             {
-                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - {(fader.assigned ? fader.assignment.label : "")}");
+                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
                 trayMenu.MenuItems.Add(faderMenu);
 
                 // Add master mixerSession to menu
@@ -109,13 +123,14 @@ namespace NK2Tray
                     faderMenu.MenuItems.Add(masterItem);
                 }
 
-                // Add focus mixerSession to menu
-                foreach (MixerSession mixerSession in focusMixerSessionList)
-                {
-                    MenuItem focusItem = new MenuItem(mixerSession.label, AssignFader);
-                    focusItem.Tag = new object[] { fader, mixerSession };
-                    faderMenu.MenuItems.Add(focusItem);
-                }
+                faderMenu.MenuItems.Add("-");
+
+                // Add focus mixerSession to menu                
+                MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
+                focusItem.Tag = new object[] { fader, focusMixerSession };
+                faderMenu.MenuItems.Add(focusItem);
+
+                faderMenu.MenuItems.Add("-");
 
                 // Add application mixer sessions to each fader
                 foreach (var mixerSession in mixerSessions)
@@ -125,10 +140,12 @@ namespace NK2Tray
                     faderMenu.MenuItems.Add(si);
                 }
 
+                faderMenu.MenuItems.Add("-");
+
                 // Add unassign option
-                MenuItem unassignItem = new MenuItem("UNASSIGN", UnassignFader);
+                MenuItem unassignItem = new MenuItem("Unassign", UnassignFader);
                 unassignItem.Tag = new object[] { fader };
-                faderMenu.MenuItems.Add(unassignItem);
+                faderMenu.MenuItems.Add(unassignItem);                
             }
 
             trayMenu.MenuItems.Add("Exit", OnExit);

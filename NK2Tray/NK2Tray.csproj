@@ -56,6 +56,7 @@
   <ItemGroup>
     <Reference Include="Costura, Version=3.3.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.3.0\lib\net40\Costura.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="NAudio, Version=1.8.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NAudio.1.8.5\lib\net35\NAudio.dll</HintPath>
@@ -77,6 +78,7 @@
     <Compile Include="AudioDevice.cs" />
     <Compile Include="Button.cs" />
     <Compile Include="ConfigSaver.cs" />
+    <Compile Include="DevicePathMapper.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
@@ -119,7 +121,7 @@
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
       <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 e x64%29</ProductName>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 und x64%29</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

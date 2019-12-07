@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections;
 
 namespace NK2Tray
 {
@@ -134,6 +135,12 @@ namespace NK2Tray
             buttons.Add(new Button(ref midiOut,  ButtonType.MediaStop,     93, false, MidiCommandCode.NoteOn));
             buttons.Add(new Button(ref midiOut,  ButtonType.MediaPlay,     94, true,  MidiCommandCode.NoteOn));
             buttons.Add(new Button(ref midiOut,  ButtonType.MediaRecord,   95, false, MidiCommandCode.NoteOn));
+
+            buttonsMappingTable = new Hashtable();
+            foreach (var button in buttons)
+            {
+                buttonsMappingTable.Add(button.controller, button);
+            }
         }
     }
 }

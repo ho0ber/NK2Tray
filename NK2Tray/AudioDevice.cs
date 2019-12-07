@@ -10,9 +10,11 @@ namespace NK2Tray
     public class AudioDevice
     {
         public MidiDevice midiDevice;
-        //private MMDevice device;
         public MMDeviceCollection devices;
-        //private AudioEndpointVolume deviceVolume;
+
+        private List<MixerSession> mixerSessionListCache;
+        private long currentCacheDate;
+        private int cacheExpireTime = 1500;
 
         private void UpdateDevices()
         {
@@ -70,7 +72,19 @@ namespace NK2Tray
         }
         */
 
-        public List<MixerSession> GetMixerSessions()
+        public List<MixerSession> GetCachedMixerSessions()
+        {
+            if (mixerSessionListCache != null && (currentCacheDate + cacheExpireTime > DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond))
+            {
+                return mixerSessionListCache;
+            }
+
+            mixerSessionListCache = GetMixerSessions();
+            currentCacheDate = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            return mixerSessionListCache;
+        }
+
+        private List<MixerSession> GetMixerSessions()
         {
             var mixerSessions = new List<MixerSession>();
             var sessionsByIdent = new Dictionary<String, List<AudioSessionControl>>();
@@ -114,62 +128,7 @@ namespace NK2Tray
 
             return mixerSessions;
         }
-
-        public List<MixerSession> GetSimilarMixerSessions(String sessionIdentifier)
-        {
-            if (sessionIdentifier == null) return null;
-
-            String searchIdentifier;
-            if (sessionIdentifier.IndexOf("|") > -1)  //save retro-compatibility
-                searchIdentifier = sessionIdentifier.Substring(sessionIdentifier.IndexOf("|") + 1, sessionIdentifier.Length - sessionIdentifier.IndexOf("|") - 1);
-            else
-                searchIdentifier = sessionIdentifier;
-
-             var mixerSessions = new List<MixerSession>();
-            var sessionsByIdent = new Dictionary<String, List<AudioSessionControl>>();
-
-            UpdateDevices();
-            for (int j = 0; j < devices.Count; j++)
-            {
-                var sessions = devices[j].AudioSessionManager.Sessions;
-
-                for (int i = 0; i < sessions.Count; i++)
-                {
-                    var session = sessions[i];
-                    if (session.State != AudioSessionState.AudioSessionStateExpired)
-                    {
-                        if (session.GetSessionIdentifier.Contains(searchIdentifier))
-                        {
-                            if (!sessionsByIdent.ContainsKey(searchIdentifier))
-                                sessionsByIdent[searchIdentifier] = new List<AudioSessionControl>();
-
-                            sessionsByIdent[searchIdentifier].Add(session);
-                        }
-                    }
-                }
-            }
-
-            foreach (var ident in sessionsByIdent.Keys.ToList())
-            {
-                var identSessions = sessionsByIdent[ident]; //.OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
-
-                bool dup = identSessions.Count > 1;
-
-                SessionType sessionType = SessionType.Application;
-
-                var process = FindLivingProcess(identSessions);
-                string label = (process != null) ? process.ProcessName : ident;
-
-                if (HasSystemSoundsSession(identSessions))
-                    label = "System Sounds";
-
-                var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
-                mixerSessions.Add(mixerSession);
-            }
-
-            return mixerSessions;
-        }
-
+                
         public MMDevice GetDeviceByIdentifier(String identifier)
         {
             UpdateDevices();
@@ -217,23 +176,39 @@ namespace NK2Tray
             return false;
         }
 
-        public MixerSession FindMixerSessions(string sessionIdentifier)
+        public MixerSession FindMixerSession(string sessionIdentifier)
         {
-            var mixerSessions = GetMixerSessions();
+            var mixerSessions = GetCachedMixerSessions();
+
             foreach (var mixerSession in mixerSessions)
             {
                 foreach (var session in mixerSession.audioSessions)
                 {
-                    if (session.GetSessionIdentifier.Contains(sessionIdentifier))
-                        return mixerSession;
+                    if (session.GetSessionIdentifier.Contains(sessionIdentifier)) 
+                        return mixerSession;                  
                 }
             }
+
             return null;
         }
-        
-        public MixerSession FindMixerSessions(int pid)
+
+        private struct ProcessCache
         {
-            var mixerSessions = GetMixerSessions();
+            public Process process;
+            public int id;
+
+            public ProcessCache(Process process, int id)
+            {
+                this.process = process;
+                this.id = id;
+            }
+        }
+        private ProcessCache processCache = new ProcessCache(null, -1);
+              
+        public MixerSession FindMixerSession(int pid)
+        {
+            var mixerSessions = GetCachedMixerSessions();
+
             foreach (var mixerSession in mixerSessions)
                 foreach (var session in mixerSession.audioSessions)
                     if (session.GetProcessID == pid)
@@ -241,7 +216,11 @@ namespace NK2Tray
 
             // if mixer session was not found becuase the pid does not match the pid of any audio session try finding it by process name
             // this is necessary since chrome and some other applications have some weired process structure
-            Process process = Process.GetProcessById(pid);
+            if (processCache.id != pid)
+            {
+                processCache = new ProcessCache(Process.GetProcessById(pid), pid);
+            }
+            Process process = processCache.process;
 
             foreach (var mixerSession in mixerSessions)
             {
