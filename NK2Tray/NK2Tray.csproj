@@ -81,6 +81,7 @@
     <Compile Include="DevicePathMapper.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
+    <Compile Include="KeyboardShortcut.cs" />
     <Compile Include="MediaTools.cs" />
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="MidiDevice.cs" />
