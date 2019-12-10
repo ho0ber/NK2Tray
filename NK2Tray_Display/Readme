@@ -1,1 +1,17 @@
+ NK2Tray
+A simple system tray utility to control the Windows Audio Mixer with a Korg nanoKONTROL2 and other similar control surfaces.
 
+(A rewrite of nk2-audio)
+
+Download
+To download the latest version of NK2Tray, go to this project's Releases page.
+
+Getting Involved
+To help test or contribute, I encourage you to join our discord: https://discord.gg/BtVTYxp
+
+Current development work is being tracked in this repository's Github Project.
+
+Disclaimer
+I'm not a Windows developer. There's a lot in here that's far from best practices, and I welcome you to help improve the code. This project is an attempt to significantly improve the stability and extensibility of a project that was first written in AutoHotkey, so even my most clumsy attempts are already much better than the old codebase. Please reach out to me if you have experience fighting with Windows in code and want to take an active role in this project.
+
+Also, I'm pretty sure I have to release this under the Ms-PL license if I want it to be open source, because that's what NAudio is licensed under.
