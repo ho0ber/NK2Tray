@@ -63,7 +63,7 @@ namespace NK2Tray
 
         public XtouchMini(AudioDevice audioDev)
         {
-            audioDevice = audioDev;
+            audioDevices = audioDev;
             FindMidiIn();
             FindMidiOut();
             if (Found)

@@ -1,5 +1,6 @@
 ﻿using NAudio.Midi;
 using System;
+using System.Collections.Generic;
 
 namespace NK2Tray
 {
@@ -125,6 +126,7 @@ namespace NK2Tray
             assigned = false;
             assignment = null;
             SetSelectLight(false);
+            SetRecordLight(false);
             identifier = "";
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, -1);
@@ -132,7 +134,7 @@ namespace NK2Tray
 
         private void convertToApplicationPath(string ident)
         {
-            if (ident != null && ident != "" && ident != "__MASTER__" && ident != "__FOCUS__") // TODO cleaner handling of special fader types
+            if (ident != null && ident != "" && !ident.Substring(0, Math.Min(10, ident.Length)).Equals("__MASTER__") && ident != "__FOCUS__") // TODO cleaner handling of special fader types
             {
                 //"{0.0.0.00000000}.{...}|\\Device\\HarddiskVolume8\\Users\\Dr. Locke\\AppData\\Roaming\\Spotify\\Spotify.exe%b{00000000-0000-0000-0000-000000000000}"
                 int deviceIndex = ident.IndexOf("\\Device");
@@ -154,19 +156,19 @@ namespace NK2Tray
             parent.SetLight(muteController, state);
         }
 
-        public void SetRecordLight( bool state)
+        public void SetRecordLight(bool state)
         {
             recordLight = state;
             parent.SetLight(recordController, state);
         }
 
-        public bool GetSelectLight(){ return selectLight; }
-    
+        public bool GetSelectLight() { return selectLight; }
+
         public bool GetMuteLight() { return muteLight; }
 
         public bool GetRecordLight() { return recordLight; }
 
-        public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset, int channel=-1)
+        public bool Match(int faderNumber, MidiEvent midiEvent, MidiCommandCode code, int offset, int channel = -1)
         {
             if (channel < 0)
                 channel = faderDef.channel;
@@ -221,9 +223,30 @@ namespace NK2Tray
             {
                 SetHandling(true);
 
+                //if loaded inactive, search again
+                if (!assigned && identifier != null && !identifier.Equals(""))
+                {
+                    assignment = parent.audioDevices.FindMixerSession(identifier);
+                    if (assignment != null)
+                    {
+                        assigned = true;
+                    }
+                }
+
                 // Fader match
                 if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
                 {
+                    if (assignment.sessionType == SessionType.Application)
+                    {
+                        MixerSession newAssignment = assignment.devices.FindMixerSession(assignment.sessionIdentifier); //update list for re-routered app, but only overrides
+                        if (newAssignment == null)                                                                      //if there is new assignments, otherwise, there is no more a inactive
+                        {                                                                                               //MixerSession to hold the label
+                            SetRecordLight(true);
+                            return true;
+                        }
+                        assignment = newAssignment;
+                    }
+
                     if (faderDef.delta)
                     {
                         float curVol;
@@ -260,7 +283,7 @@ namespace NK2Tray
                     else
                     {
                         var pid = WindowTools.GetForegroundPID();
-                        var mixerSession = parent.audioDevice.FindMixerSessions(pid);
+                        var mixerSession = parent.audioDevices.FindMixerSession(pid);
                         if (mixerSession != null)
                         {
                             Assign(mixerSession);
@@ -300,7 +323,7 @@ namespace NK2Tray
                     return true;
                 }
             }
-                return false;
+            return false;
 
         }
 

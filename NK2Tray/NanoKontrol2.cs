@@ -27,7 +27,7 @@ namespace NK2Tray
 
         public NanoKontrol2(AudioDevice audioDev)
         {
-            audioDevice = audioDev;
+            audioDevices = audioDev;
             FindMidiIn();
             FindMidiOut();
             if (Found)

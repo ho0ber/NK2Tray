@@ -1,7 +1,10 @@
-﻿using System;
+﻿using NAudio.CoreAudioApi;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+
 
 namespace NK2Tray
 {
@@ -12,7 +15,7 @@ namespace NK2Tray
 
         private NotifyIcon trayIcon;
         public MidiDevice midiDevice;
-        public AudioDevice audioDevice;
+        public AudioDevice audioDevices;
 
         public SysTrayApp()
         {
@@ -34,13 +37,13 @@ namespace NK2Tray
 
         private Boolean SetupDevice()
         {
-            audioDevice = new AudioDevice();
+            audioDevices = new AudioDevice();
 
-            midiDevice = new NanoKontrol2(audioDevice);
+            midiDevice = new NanoKontrol2(audioDevices);
             if (!midiDevice.Found)
-                midiDevice = new XtouchMini(audioDevice);
+                midiDevice = new XtouchMini(audioDevices);
 
-            audioDevice.midiDevice = midiDevice;
+            audioDevices.midiDevice = midiDevice;
 
             return midiDevice.Found;
         }
@@ -86,37 +89,48 @@ namespace NK2Tray
             ContextMenu trayMenu = (ContextMenu)sender;
             trayMenu.MenuItems.Clear();
 
-            var mixerSessions = audioDevice.GetMixerSessions();
-            var masterMixerSession = new MixerSession(audioDevice, "Master", SessionType.Master, audioDevice.GetDeviceVolumeObject());
+            var mixerSessions = audioDevices.GetCachedMixerSessions();
 
-            var focusMixerSession = new MixerSession(audioDevice, "Focus", SessionType.Focus, audioDevice.GetDeviceVolumeObject());
+            var masterMixerSessionList = new List<MixerSession>();
+            foreach(MMDevice mmDevice in audioDevices.devices)
+            {
+                masterMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
+            }
             
+            MixerSession focusMixerSession;
+            focusMixerSession = new MixerSession("", audioDevices, "Focus", SessionType.Focus);
+                        
             // Dont create context menu if no midi device is connected
             if(!midiDevice.Found)
             {
                 if (!SetupDevice()) // This setup call can be removed once proper lifecycle management is implemented, for now this also adds a nice way to reconnect the controller
                 {
-                    MessageBox.Show("No midi device detected. Are you sure your device is plugged in correctly ?");
+                    MessageBox.Show("No midi device detected. Are you sure your device is plugged in correctly?");
                     return;
                 }
             }
-
-
-
+                       
             foreach (var fader in midiDevice.faders)
             {
                 MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
                 trayMenu.MenuItems.Add(faderMenu);
 
                 // Add master mixerSession to menu
-                MenuItem masterItem = new MenuItem(masterMixerSession.label, AssignFader);
-                masterItem.Tag = new object[] { fader, masterMixerSession };
-                faderMenu.MenuItems.Add(masterItem);
+                foreach(MixerSession mixerSession in masterMixerSessionList)
+                {
+                    MenuItem masterItem = new MenuItem(mixerSession.label, AssignFader);
+                    masterItem.Tag = new object[] { fader, mixerSession };
+                    faderMenu.MenuItems.Add(masterItem);
+                }
 
-                // Add focus mixerSession to menu
+                faderMenu.MenuItems.Add("-");
+
+                // Add focus mixerSession to menu                
                 MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
                 focusItem.Tag = new object[] { fader, focusMixerSession };
                 faderMenu.MenuItems.Add(focusItem);
+
+                faderMenu.MenuItems.Add("-");
 
                 // Add application mixer sessions to each fader
                 foreach (var mixerSession in mixerSessions)
@@ -126,10 +140,12 @@ namespace NK2Tray
                     faderMenu.MenuItems.Add(si);
                 }
 
+                faderMenu.MenuItems.Add("-");
+
                 // Add unassign option
-                MenuItem unassignItem = new MenuItem("UNASSIGN", UnassignFader);
+                MenuItem unassignItem = new MenuItem("Unassign", UnassignFader);
                 unassignItem.Tag = new object[] { fader };
-                faderMenu.MenuItems.Add(unassignItem);
+                faderMenu.MenuItems.Add(unassignItem);                
             }
 
             trayMenu.MenuItems.Add("Exit", OnExit);
