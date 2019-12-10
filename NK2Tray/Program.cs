@@ -138,6 +138,8 @@ namespace NK2Tray
                     faderMenu.MenuItems.Add(micItem);
                 }
 
+                faderMenu.MenuItems.Add("-");
+
                 // Add focus mixerSession to menu                
                 MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
                 focusItem.Tag = new object[] { fader, focusMixerSession };

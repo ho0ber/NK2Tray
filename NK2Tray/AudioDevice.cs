@@ -34,6 +34,7 @@ namespace NK2Tray
             {
                 mmDevice.AudioSessionManager.OnSessionCreated += OnSessionCreated;
             }
+
             foreach (MMDevice mmDevice in inputDevices)
             {
                 mmDevice.AudioSessionManager.OnSessionCreated += OnSessionCreated;
