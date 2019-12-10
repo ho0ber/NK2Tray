@@ -1,7 +1,8 @@
 ## Bill of materials for the NK2Tray_Display
 
 
-#### Printed Parts:
+
+### Printed Parts:
 
  1x  	NK2DisplayCaseA.stl
 
@@ -13,7 +14,8 @@ As the case and the latches do not bear any load, you can use a low infill. 25% 
 Print the as they are designed and use supports under the overhang. Use at least 3 perimeter walls, again infill doesn´t matter that much.
 
 
-#### Electronic  Parts:
+
+### Electronic  Parts:
 
 8x OLED Display 0.96 inch, 128X64, I2C (get the white OR blue ones, not yellow&blue)
 https://www.aliexpress.com/item/32713614136.html?spm=a2g0s.9042311.0.0.27424c4dUOH4Fo
@@ -29,6 +31,7 @@ Gerber_PCB_NK2Tray_Display.zip
 [As of 10.12.2019 i still have 4 bare PCBs in my drawer, contact me if you want to buy one at cost of 2.5€ + shipping]
 
 
-#### Fastener:
+
+### Fastener:
 
 3x M3x8 Hex Socket screw or similar
