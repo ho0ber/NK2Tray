@@ -10,7 +10,9 @@ namespace NK2Tray
     public class AudioDevice
     {
         public MidiDevice midiDevice;
-        public MMDeviceCollection devices;
+        public MMDeviceCollection outputDevices;
+        public MMDeviceCollection inputDevices;
+
 
         private List<MixerSession> mixerSessionListCache;
         private long currentCacheDate;
@@ -25,8 +27,14 @@ namespace NK2Tray
             //device.AudioSessionManager.OnSessionCreated += OnSessionCreated;
             //deviceVolume = device.AudioEndpointVolume;
 
-            devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-            foreach(MMDevice mmDevice in devices)
+            outputDevices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            inputDevices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
+            
+            foreach (MMDevice mmDevice in outputDevices)
+            {
+                mmDevice.AudioSessionManager.OnSessionCreated += OnSessionCreated;
+            }
+            foreach (MMDevice mmDevice in inputDevices)
             {
                 mmDevice.AudioSessionManager.OnSessionCreated += OnSessionCreated;
             }
@@ -90,9 +98,9 @@ namespace NK2Tray
             var sessionsByIdent = new Dictionary<String, List<AudioSessionControl>>();
 
             UpdateDevices();
-            for (int j = 0; j < devices.Count; j++)
+            for (int j = 0; j < outputDevices.Count; j++)
             {
-                var sessions = devices[j].AudioSessionManager.Sessions;
+                var sessions = outputDevices[j].AudioSessionManager.Sessions;
 
                 for (int i = 0; i < sessions.Count; i++)
                 {
@@ -106,6 +114,25 @@ namespace NK2Tray
                         sessionsByIdent[searchIdentifier].Add(session);
                     }
                 }
+            }
+
+            for (int j = 0; j < inputDevices.Count; j++)
+            {
+                var sessions = inputDevices[j].AudioSessionManager.Sessions;
+                for (int i = 0; i < sessions.Count; i++)
+                {
+                    var session = sessions[i];
+                    if (session.State != AudioSessionState.AudioSessionStateExpired)
+                    {
+                        String searchIdentifier = session.GetSessionIdentifier.Substring(session.GetSessionIdentifier.IndexOf("|") + 1, session.GetSessionIdentifier.Length - session.GetSessionIdentifier.IndexOf("|") - 1);
+                        if (!sessionsByIdent.ContainsKey(searchIdentifier))
+                            sessionsByIdent[searchIdentifier] = new List<AudioSessionControl>();
+
+                        sessionsByIdent[searchIdentifier].Add(session);
+                    }
+                }
+
+
             }
 
             foreach (var ident in sessionsByIdent.Keys.ToList())
@@ -138,12 +165,16 @@ namespace NK2Tray
                 deviceId = deviceId.Substring(0, deviceId.IndexOf("|"));
             };
 
-            for (int i = 0; i < devices.Count; i++)
+            for (int i = 0; i < outputDevices.Count; i++)
             {
-                if (devices[i].ID.Equals(deviceId))
-                    return devices[i];
+                if (outputDevices[i].ID.Equals(deviceId))
+                    return outputDevices[i];
             }
-
+            for (int i = 0; i < inputDevices.Count; i++)
+            {
+                if (inputDevices[i].ID.Equals(deviceId))
+                    return inputDevices[i];
+            }
             //return default if none found (config/save retro-compatibility)
             var deviceEnumerator = new MMDeviceEnumerator();
             return deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);

@@ -92,11 +92,17 @@ namespace NK2Tray
             var mixerSessions = audioDevices.GetCachedMixerSessions();
 
             var masterMixerSessionList = new List<MixerSession>();
-            foreach(MMDevice mmDevice in audioDevices.devices)
+            foreach(MMDevice mmDevice in audioDevices.outputDevices)
             {
                 masterMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
             }
-            
+
+            var micMixerSessionList = new List<MixerSession>();
+            foreach (MMDevice mmDevice in audioDevices.inputDevices)
+            {
+                micMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Microphone", SessionType.Master));
+            }
+
             MixerSession focusMixerSession;
             focusMixerSession = new MixerSession("", audioDevices, "Focus", SessionType.Focus);
                         
@@ -124,6 +130,13 @@ namespace NK2Tray
                 }
 
                 faderMenu.MenuItems.Add("-");
+
+                foreach (MixerSession mixerSession in micMixerSessionList)
+                {
+                    MenuItem micItem = new MenuItem(mixerSession.label, AssignFader);
+                    micItem.Tag = new object[] { fader, mixerSession };
+                    faderMenu.MenuItems.Add(micItem);
+                }
 
                 // Add focus mixerSession to menu                
                 MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
