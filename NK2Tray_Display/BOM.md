@@ -35,3 +35,9 @@ Gerber_PCB_NK2Tray_Display.zip
 ### Fastener:
 
 3x M3x8 Hex Socket screw or similar
+
+
+
+### Firmware:
+
+NK2Tray_DisplayFW.ino
