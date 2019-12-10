@@ -1,17 +1,18 @@
- NK2Tray
+# <img src="https://media.discordapp.net/attachments/532233406482743300/653946714561970176/IMG_20190927_114511.jpg?width=841&height=631">
+# <img src="https://raw.githubusercontent.com/ho0ber/NK2Tray/master/NK2Tray/nk2tray.ico" height="24"> NK2Tray
 A simple system tray utility to control the Windows Audio Mixer with a Korg nanoKONTROL2 and other similar control surfaces.
 
-(A rewrite of nk2-audio)
+(A rewrite of [nk2-audio](https://github.com/ho0ber/nk2-audio))
 
-Download
-To download the latest version of NK2Tray, go to this project's Releases page.
+## Download
+To download the latest version of NK2Tray, go to this project's [**Releases page**](https://github.com/ho0ber/NK2Tray/releases).
 
-Getting Involved
+## Getting Involved
 To help test or contribute, I encourage you to join our discord: https://discord.gg/BtVTYxp
 
-Current development work is being tracked in this repository's Github Project.
+Current development work is being tracked in this repository's [Github Project](https://github.com/ho0ber/NK2Tray/projects/1).
 
-Disclaimer
+## Disclaimer
 I'm not a Windows developer. There's a lot in here that's far from best practices, and I welcome you to help improve the code. This project is an attempt to significantly improve the stability and extensibility of a project that was first written in AutoHotkey, so even my most clumsy attempts are already much better than the old codebase. Please reach out to me if you have experience fighting with Windows in code and want to take an active role in this project.
 
-Also, I'm pretty sure I have to release this under the Ms-PL license if I want it to be open source, because that's what NAudio is licensed under.
+Also, I'm pretty sure I have to release this under the Ms-PL license if I want it to be open source, because that's what [NAudio](https://github.com/naudio/NAudio) is licensed under.
