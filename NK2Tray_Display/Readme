@@ -1,8 +1,7 @@
 # <img src="https://media.discordapp.net/attachments/532233406482743300/653946714561970176/IMG_20190927_114511.jpg?width=841&height=631">
-# <img src="https://raw.githubusercontent.com/ho0ber/NK2Tray/master/NK2Tray/nk2tray.ico" height="24"> NK2Tray
-A simple system tray utility to control the Windows Audio Mixer with a Korg nanoKONTROL2 and other similar control surfaces.
 
-(A rewrite of [nk2-audio](https://github.com/ho0ber/nk2-audio))
+## NK2Tray_Display
+A simple system tray utility to control the Windows Audio Mixer with a Korg nanoKONTROL2 and other similar control surfaces.
 
 ## Download
 To download the latest version of NK2Tray, go to this project's [**Releases page**](https://github.com/ho0ber/NK2Tray/releases).
