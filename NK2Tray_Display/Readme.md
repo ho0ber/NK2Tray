@@ -1,4 +1,5 @@
 <img src="https://media.discordapp.net/attachments/532233406482743300/653946714561970176/IMG_20190927_114511.jpg?width=841&height=631">
+
 # NK2Tray_Display
 A simple addon for the Korg nanoKONTROL2 providing 8 tiny OLED displays to show the software that is controlled by the particular fader. The displays are controlled by a ESP8266 via an I2C multiplexer.
 
