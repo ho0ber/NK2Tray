@@ -117,6 +117,8 @@ namespace NK2Tray
                 }
             }
 
+            /*
+            // Commented out Iput device code because it breaks the session lists when input and ouput is controlled at the same time
             for (int j = 0; j < inputDevices.Count; j++)
             {
                 var sessions = inputDevices[j].AudioSessionManager.Sessions;
@@ -132,17 +134,14 @@ namespace NK2Tray
                         sessionsByIdent[searchIdentifier].Add(session);
                     }
                 }
-
-
             }
+            */
 
             foreach (var ident in sessionsByIdent.Keys.ToList())
             {
                 var identSessions = sessionsByIdent[ident]; //.OrderBy(i => (int)Process.GetProcessById((int)i.GetProcessID).MainWindowHandle).ToList();
 
                 bool dup = identSessions.Count > 1;
-                
-                SessionType sessionType = SessionType.Application;
 
                 var process = FindLivingProcess(identSessions);
                 string label = (process != null) ? process.ProcessName : ident;
@@ -150,7 +149,7 @@ namespace NK2Tray
                 if (HasSystemSoundsSession(identSessions))
                     label = "System Sounds";
                                 
-                var mixerSession = new MixerSession(this, label, ident, identSessions, sessionType);
+                var mixerSession = new MixerSession(this, label, ident, identSessions, SessionType.Application);
                 mixerSessions.Add(mixerSession);
             }
 
