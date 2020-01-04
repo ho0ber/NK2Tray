@@ -97,11 +97,14 @@ namespace NK2Tray
                 masterMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
             }
 
+            /*
+            // Commented out Iput device code because it breaks the session lists when input and ouput is controlled at the same time
             var micMixerSessionList = new List<MixerSession>();
             foreach (MMDevice mmDevice in audioDevices.inputDevices)
             {
                 micMixerSessionList.Add(new MixerSession(mmDevice.ID, audioDevices, "Microphone", SessionType.Master));
             }
+            */
 
             MixerSession focusMixerSession;
             focusMixerSession = new MixerSession("", audioDevices, "Focus", SessionType.Focus);
@@ -129,6 +132,8 @@ namespace NK2Tray
                     faderMenu.MenuItems.Add(masterItem);
                 }
 
+                /* 
+                // Commented out Iput device code because it breaks the session lists when input and ouput is controlled at the same time
                 faderMenu.MenuItems.Add("-");
 
                 foreach (MixerSession mixerSession in micMixerSessionList)
@@ -137,6 +142,7 @@ namespace NK2Tray
                     micItem.Tag = new object[] { fader, mixerSession };
                     faderMenu.MenuItems.Add(micItem);
                 }
+                */
 
                 faderMenu.MenuItems.Add("-");
 
