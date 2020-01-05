@@ -72,8 +72,8 @@ namespace NK2Tray
         {
             if (fader.assigned)
                 return fader.assignment.label;
-
-            if(fader.identifier.Length > 0 && fader.identifier.Contains(".exe"))
+            
+            if(fader.identifier != null && fader.identifier.Length > 0 && fader.identifier.Contains(".exe"))
             {
                 String identifier = fader.identifier;
                 int lastBackSlash = identifier.LastIndexOf('\\') + 1;
