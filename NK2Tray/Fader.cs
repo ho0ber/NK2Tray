@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 
 namespace NK2Tray
 {
@@ -293,22 +292,9 @@ namespace NK2Tray
                         var volumeGoingDown = val > faderDef.range / 2;
 
                         if (volumeGoingDown)
-                        {
                             nextStepIndex = Math.Max(nearestStep - 1, 0);
-                        }
                         else
-                        {
                             nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
-                        }
-
-                        /*
-                        if (val > faderDef.range / 2)
-                            // Volume down
-                            curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
-                        else
-                            // Volume up
-                            curVol = assignment.ChangeVolume(val / faderDef.range);
-                        */
 
                         var newVol = steps[nextStepIndex];
                         var newVolIndicator = (float)nextStepIndex / (float)(steps.Length - 1);
@@ -318,7 +304,6 @@ namespace NK2Tray
                     }
                     else
                     {
-                        // assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
                         assignment.SetVolume(getVolFromStage(GetValue(e.MidiEvent)));
                     }
 
