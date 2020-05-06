@@ -193,7 +193,7 @@ namespace NK2Tray
 
         private void SaveLogarithmic()
         {
-            midiDevice.SetCurve(logarithmic ? 1.5f : 1f);
+            midiDevice.SetCurve(logarithmic ? 2f : 1f);
         }
 
         private void AssignFader(object sender, EventArgs e)
