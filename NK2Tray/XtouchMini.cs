@@ -76,13 +76,6 @@ namespace NK2Tray
             }
         }
 
-        public override void SetCurve(float pow)
-        {
-            DefaultFaderDef.SetCurve(pow);
-            FirstTwoFaderDef.SetCurve(pow);
-            MasterFaderDef.SetCurve(pow);
-        }
-
         public override void SetVolumeIndicator(int fader, float level)
         {
             if (level >= 0)

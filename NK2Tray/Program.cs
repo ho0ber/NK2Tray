@@ -174,7 +174,7 @@ namespace NK2Tray
 
             trayMenu.MenuItems.Add("-");
 
-            MenuItem logCheck = new MenuItem("Logarithmic");
+            MenuItem logCheck = new MenuItem("Logarithmic", ToggleLogarithmic);
             logCheck.Checked = logarithmic;
             trayMenu.MenuItems.Add(logCheck);
 

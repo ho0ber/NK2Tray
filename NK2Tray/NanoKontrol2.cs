@@ -41,11 +41,6 @@ namespace NK2Tray
             }
         }
 
-        public override void SetCurve(float pow)
-        {
-            DefaultFaderDef.SetCurve(pow);
-        }
-
         public override void ResetAllLights()
         {
             foreach (var i in Enumerable.Range(0, 128))

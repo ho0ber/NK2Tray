@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace NK2Tray
 {
@@ -25,8 +26,6 @@ namespace NK2Tray
         public int selectChannelOverride;
         public int muteChannelOverride;
         public int recordChannelOverride;
-        public float[] steps;
-        private float pow = 1f;
 
         public FaderDef(bool _delta, float _range, int _channel,
             bool _selectPresent, bool _mutePresent, bool _recordPresent,
@@ -52,27 +51,7 @@ namespace NK2Tray
             selectChannelOverride = _selectChannelOverride;
             muteChannelOverride = _muteChannelOverride;
             recordChannelOverride = _recordChannelOverride;
-            steps = calculateSteps(range);
         }
-
-        public void SetCurve(float _pow)
-        {
-            pow = _pow;
-            steps = calculateSteps(range);
-        }
-
-        private float[] calculateSteps(float range)
-        {
-            if (!delta) return new float[0];
-
-            return Enumerable.Range(0, (int)range + 1).Select(stage => getVolFromStage(stage, (int)range)).ToArray();
-        }
-
-        public float getVolFromStage(int stage, int range)
-        {
-            return (float)Math.Pow((double)stage / range, pow);
-        }
-
     }
 
     public class Fader
@@ -93,12 +72,17 @@ namespace NK2Tray
         public string applicationPath;
         public string applicationName;
 
+        public float[] steps;
+        public float pow;
+
         public Fader(MidiDevice midiDevice, int faderNum)
         {
             parent = midiDevice;
             midiOut = midiDevice.midiOut;
             faderNumber = faderNum;
             faderDef = parent.DefaultFaderDef;
+            pow = 1f;
+            steps = calculateSteps();
         }
 
         public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
@@ -107,6 +91,36 @@ namespace NK2Tray
             midiOut = midiDevice.midiOut;
             faderNumber = faderNum;
             faderDef = _faderDef;
+            pow = 1f;
+            steps = calculateSteps();
+        }
+
+        public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef, float _pow)
+        {
+            parent = midiDevice;
+            midiOut = midiDevice.midiOut;
+            faderNumber = faderNum;
+            faderDef = _faderDef;
+            pow = _pow;
+            steps = calculateSteps();
+        }
+
+        public void SetCurve(float _pow)
+        {
+            pow = _pow;
+            steps = calculateSteps();
+        }
+
+        private float[] calculateSteps()
+        {
+            if (!faderDef.delta) return new float[0];
+
+            return Enumerable.Range(0, (int)faderDef.range + 1).Select(stage => getVolFromStage(stage)).ToArray();
+        }
+
+        public float getVolFromStage(int stage)
+        {
+            return (float)Math.Pow((double)stage / faderDef.range, pow);
         }
 
         private int inputController => faderNumber + faderDef.faderOffset;
@@ -273,7 +287,7 @@ namespace NK2Tray
                     {
                         var val = GetValue(e.MidiEvent);
                         var volNow = assignment.GetVolume();
-                        var nearestStep = faderDef.steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volNow - x) }).OrderBy(x => x.Distance).First().Index;
+                        var nearestStep = steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volNow - x) }).OrderBy(x => x.Distance).First().Index;
                         int nextStepIndex;
 
                         var volumeGoingDown = val > faderDef.range / 2;
@@ -284,7 +298,7 @@ namespace NK2Tray
                         }
                         else
                         {
-                            nextStepIndex = Math.Min(nearestStep + 1, faderDef.steps.Length - 1);
+                            nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
                         }
 
                         /*
@@ -296,8 +310,8 @@ namespace NK2Tray
                             curVol = assignment.ChangeVolume(val / faderDef.range);
                         */
 
-                        var newVol = faderDef.steps[nextStepIndex];
-                        var newVolIndicator = (float)nextStepIndex / (float)(faderDef.steps.Length - 1);
+                        var newVol = steps[nextStepIndex];
+                        var newVolIndicator = (float)nextStepIndex / (float)(steps.Length - 1);
 
                         assignment.SetVolume(newVol);
                         parent.SetVolumeIndicator(faderNumber, newVolIndicator);
@@ -305,7 +319,7 @@ namespace NK2Tray
                     else
                     {
                         // assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
-                        assignment.SetVolume(faderDef.getVolFromStage(GetValue(e.MidiEvent), (int)faderDef.range));
+                        assignment.SetVolume(getVolFromStage(GetValue(e.MidiEvent)));
                     }
 
                     if (assignment.IsDead())
