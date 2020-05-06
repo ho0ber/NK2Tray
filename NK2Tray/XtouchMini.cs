@@ -45,7 +45,7 @@ namespace NK2Tray
 
         public FaderDef MasterFaderDef => new FaderDef(
             false,  // delta
-            16383f, // range
+            16256f, // range
             1,      // channel
             true,   // selectPresent
             true,   // mutePresent
