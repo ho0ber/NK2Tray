@@ -16,6 +16,7 @@ namespace NK2Tray
         private NotifyIcon trayIcon;
         public MidiDevice midiDevice;
         public AudioDevice audioDevices;
+        public bool logarithmic;
 
         public SysTrayApp()
         {
@@ -29,10 +30,12 @@ namespace NK2Tray
                 ContextMenu = new ContextMenu()
             };
             trayIcon.ContextMenu.Popup += OnPopup;
-
             trayIcon.Visible = true;
 
             SetupDevice();
+
+            logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
+            midiDevice.SetCurve(logarithmic ? 3f : 1f);
         }
 
         private Boolean SetupDevice()
@@ -169,7 +172,21 @@ namespace NK2Tray
                 faderMenu.MenuItems.Add(unassignItem);                
             }
 
+            trayMenu.MenuItems.Add("-");
+
+            MenuItem logCheck = new MenuItem("Logarithmic");
+            logCheck.Checked = logarithmic;
+            trayMenu.MenuItems.Add(logCheck);
+
+            trayMenu.MenuItems.Add("-");
             trayMenu.MenuItems.Add("Exit", OnExit);
+        }
+
+        private void ToggleLogarithmic(object sender, EventArgs e)
+        {
+            logarithmic = !logarithmic;
+            ConfigSaver.AddOrUpdateAppSettings("logarithmic", System.Convert.ToString(logarithmic));
+            midiDevice.SetCurve(logarithmic ? 3f : 1f);
         }
 
         private void AssignFader(object sender, EventArgs e)

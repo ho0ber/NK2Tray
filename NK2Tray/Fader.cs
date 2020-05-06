@@ -1,6 +1,7 @@
 ﻿using NAudio.Midi;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NK2Tray
 {
@@ -24,6 +25,8 @@ namespace NK2Tray
         public int selectChannelOverride;
         public int muteChannelOverride;
         public int recordChannelOverride;
+        public float[] steps;
+        private float pow = 1f;
 
         public FaderDef(bool _delta, float _range, int _channel,
             bool _selectPresent, bool _mutePresent, bool _recordPresent,
@@ -49,7 +52,27 @@ namespace NK2Tray
             selectChannelOverride = _selectChannelOverride;
             muteChannelOverride = _muteChannelOverride;
             recordChannelOverride = _recordChannelOverride;
+            steps = calculateSteps(range);
         }
+
+        public void SetCurve(float _pow)
+        {
+            pow = _pow;
+            steps = calculateSteps(range);
+        }
+
+        private float[] calculateSteps(float range)
+        {
+            if (!delta) return new float[0];
+
+            return Enumerable.Range(0, (int)range + 1).Select(stage => getVolFromStage(stage, (int)range)).ToArray();
+        }
+
+        public float getVolFromStage(int stage, int range)
+        {
+            return (float)Math.Pow((double)stage / range, pow);
+        }
+
     }
 
     public class Fader
@@ -90,7 +113,6 @@ namespace NK2Tray
         private int selectController => faderNumber + faderDef.selectOffset;
         private int muteController => faderNumber + faderDef.muteOffset;
         private int recordController => faderNumber + faderDef.recordOffset;
-
 
         public void ResetLights()
         {
@@ -249,17 +271,41 @@ namespace NK2Tray
 
                     if (faderDef.delta)
                     {
-                        float curVol;
                         var val = GetValue(e.MidiEvent);
+                        var volNow = assignment.GetVolume();
+                        var nearestStep = faderDef.steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volNow - x) }).OrderBy(x => x.Distance).First().Index;
+                        int nextStepIndex;
+
+                        var volumeGoingDown = val > faderDef.range / 2;
+
+                        if (volumeGoingDown)
+                        {
+                            nextStepIndex = Math.Max(nearestStep - 1, 0);
+                        }
+                        else
+                        {
+                            nextStepIndex = Math.Min(nearestStep + 1, faderDef.steps.Length - 1);
+                        }
+
+                        /*
                         if (val > faderDef.range / 2)
+                            // Volume down
                             curVol = assignment.ChangeVolume((faderDef.range - val) / faderDef.range);
                         else
+                            // Volume up
                             curVol = assignment.ChangeVolume(val / faderDef.range);
-                        parent.SetVolumeIndicator(faderNumber, curVol);
+                        */
+
+                        var newVol = faderDef.steps[nextStepIndex];
+                        var newVolIndicator = (float)nextStepIndex / (float)(faderDef.steps.Length - 1);
+
+                        assignment.SetVolume(newVol);
+                        parent.SetVolumeIndicator(faderNumber, newVolIndicator);
                     }
                     else
                     {
-                        assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
+                        // assignment.SetVolume(GetValue(e.MidiEvent) / faderDef.range);
+                        assignment.SetVolume(faderDef.getVolFromStage(GetValue(e.MidiEvent), (int)faderDef.range));
                     }
 
                     if (assignment.IsDead())
