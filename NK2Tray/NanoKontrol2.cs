@@ -25,20 +25,10 @@ namespace NK2Tray
             MidiCommandCode.ControlChange // recordCode
         );
 
-        public NanoKontrol2(AudioDevice audioDev)
+        public NanoKontrol2(AudioDevice audioDev, bool takeControl = true)
         {
             audioDevices = audioDev;
-            FindMidiIn();
-            FindMidiOut();
-            if (Found)
-            {
-                ResetAllLights();
-                InitFaders();
-                InitButtons();
-                LightShow();
-                LoadAssignments();
-                ListenForMidi();
-            }
+            Setup(takeControl);
         }
 
         public override void ResetAllLights()
