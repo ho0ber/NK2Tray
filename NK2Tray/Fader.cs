@@ -108,6 +108,8 @@ namespace NK2Tray
             applicationName = mixerSession.label;
             SetSelectLight(true);
             SetRecordLight(false);
+            SetMuteLight(mixerSession.GetMute());
+
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, mixerSession.GetVolume());
         }
