@@ -121,6 +121,7 @@ namespace NK2Tray
             assigned = false;
             SetSelectLight(true);
             SetRecordLight(true);
+            SetMuteLight(false);
         }
 
         public void Unassign()
@@ -129,6 +130,7 @@ namespace NK2Tray
             assignment = null;
             SetSelectLight(false);
             SetRecordLight(false);
+            SetMuteLight(false);
             identifier = "";
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, -1);
