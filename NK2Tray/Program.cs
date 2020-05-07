@@ -16,6 +16,7 @@ namespace NK2Tray
 
         private NotifyIcon trayIcon;
         public MidiDevice midiDevice;
+        public List<MidiDevice> midiDevices;
         public AudioDevice audioDevices;
         public bool logarithmic;
 
@@ -55,16 +56,49 @@ namespace NK2Tray
         {
             audioDevices = new AudioDevice();
 
-            midiDevice = new NanoKontrol2(audioDevices);
-            if (!midiDevice.Found)
-                midiDevice = new XtouchMini(audioDevices);
+            midiDevices = new List<MidiDevice>
+            {
+                new NanoKontrol2(audioDevices, false),
+                new XtouchMini(audioDevices, false)
+            }.FindAll(device => device.Found);
 
-            audioDevices.midiDevice = midiDevice;
+            if (midiDevices.Count < 1)
+            {
+                midiDevice = new MidiDevice();
+
+                return false;
+            }
+
+            // Try use the last used device
+            var lastUsedDevice = ConfigSaver.GetAppSettings("midi-device");
+
+            if (lastUsedDevice != null && lastUsedDevice != "")
+                midiDevice = PickNewDevice(lastUsedDevice);
+
+            // If we can't find it, use the first one on the list
+            if (midiDevice == null)
+                midiDevice = PickNewDevice(midiDevices.First().name);
 
             logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
             SaveLogarithmic();
 
             return midiDevice.Found;
+        }
+
+        private MidiDevice PickNewDevice(string name)
+        {
+            var newMidiDevice = midiDevices.Find(device => device.name == name);
+            if (newMidiDevice == null) return null;
+
+            newMidiDevice.Setup();
+
+            var oldMidiDevice = midiDevice;
+            midiDevice = newMidiDevice;
+            if (oldMidiDevice != null) oldMidiDevice.Close();
+
+            ConfigSaver.AddOrUpdateAppSettings("midi-device", midiDevice.name);
+
+            return midiDevice;
         }
 
         private void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
@@ -191,10 +225,22 @@ namespace NK2Tray
                 // Add unassign option
                 MenuItem unassignItem = new MenuItem("Unassign", UnassignFader);
                 unassignItem.Tag = new object[] { fader };
-                faderMenu.MenuItems.Add(unassignItem);                
+                faderMenu.MenuItems.Add(unassignItem);
             }
 
             trayMenu.MenuItems.Add("-");
+
+            // Add MIDI device selection
+            var deviceSelector = new MenuItem("MIDI Device - " + (midiDevice.Found ? midiDevice.name : "None"));
+
+            foreach (var md in midiDevices)
+            {
+                var deviceMenuItem = new MenuItem(md.name, (object _sender, EventArgs _e) => PickNewDevice(md.name));
+                if (md.name == midiDevice.name) deviceMenuItem.Checked = true;
+                deviceSelector.MenuItems.Add(deviceMenuItem);
+            }
+
+            trayMenu.MenuItems.Add(deviceSelector);
 
             // Add toggle option for logarithmic volume curve
             MenuItem logCheck = new MenuItem("Logarithmic", ToggleLogarithmic);
