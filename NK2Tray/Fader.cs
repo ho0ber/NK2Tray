@@ -80,8 +80,7 @@ namespace NK2Tray
             midiOut = midiDevice.midiOut;
             faderNumber = faderNum;
             faderDef = parent.DefaultFaderDef;
-            pow = 1f;
-            steps = calculateSteps();
+            SetCurve(1f);
         }
 
         public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
@@ -90,18 +89,7 @@ namespace NK2Tray
             midiOut = midiDevice.midiOut;
             faderNumber = faderNum;
             faderDef = _faderDef;
-            pow = 1f;
-            steps = calculateSteps();
-        }
-
-        public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef, float _pow)
-        {
-            parent = midiDevice;
-            midiOut = midiDevice.midiOut;
-            faderNumber = faderNum;
-            faderDef = _faderDef;
-            pow = _pow;
-            steps = calculateSteps();
+            SetCurve(1f);
         }
 
         public void SetCurve(float _pow)
