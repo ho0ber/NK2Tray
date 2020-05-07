@@ -222,5 +222,11 @@ namespace NK2Tray
             }
         }
 
+        public void Close()
+        {
+            ResetAllLights();
+            if (midiIn != null) midiIn.Dispose();
+            if (midiOut != null) midiOut.Dispose();
+        }
     }
 }
