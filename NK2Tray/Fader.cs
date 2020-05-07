@@ -134,7 +134,13 @@ namespace NK2Tray
 
         private void convertToApplicationPath(string ident)
         {
-            if (ident != null && ident != "" && !ident.Substring(0, Math.Min(10, ident.Length)).Equals("__MASTER__") && ident != "__FOCUS__") // TODO cleaner handling of special fader types
+            if (
+                ident != null
+                && ident != ""
+                && !ident.StartsWith("#")
+                && !ident.Substring(0, Math.Min(10, ident.Length)).Equals("__MASTER__")
+                && ident != "__FOCUS__"
+            ) // TODO cleaner handling of special fader types
             {
                 //"{0.0.0.00000000}.{...}|\\Device\\HarddiskVolume8\\Users\\Dr. Locke\\AppData\\Roaming\\Spotify\\Spotify.exe%b{00000000-0000-0000-0000-000000000000}"
                 int deviceIndex = ident.IndexOf("\\Device");
@@ -308,7 +314,11 @@ namespace NK2Tray
                 }
 
                 // Record match
-                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride))
+                if (
+                    assigned
+                    && applicationPath != null
+                    && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
+                )
                 {
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
