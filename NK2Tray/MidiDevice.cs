@@ -26,6 +26,9 @@ namespace NK2Tray
     {
         public MidiIn midiIn;
         public MidiOut midiOut;
+        public bool midiInDetected;
+        public bool midiOutDetected;
+        public string name;
 
         public List<Fader> faders;
         public List<Button> buttons;
@@ -42,7 +45,6 @@ namespace NK2Tray
             Console.WriteLine($@"Initializing Midi Device {SearchString}");
         }
 
-        public bool Found => (midiIn != null && midiOut != null);
         public virtual void Setup(bool takeControl = true)
         {
             FindMidiIn(takeControl);
@@ -59,28 +61,40 @@ namespace NK2Tray
             }
         }
 
-        public void FindMidiIn()
+        public bool Found => ((midiInDetected && midiOutDetected) || (midiIn != null && midiOut != null));
+
+        public void FindMidiIn(bool takeControl = true)
         {
             for (int i = 0; i < MidiIn.NumberOfDevices; i++)
             {
                 Console.WriteLine("MIDI IN: " + MidiIn.DeviceInfo(i).ProductName);
                 if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
                 {
-                    midiIn = new MidiIn(i);
+                    name = MidiIn.DeviceInfo(i).ProductName;
+
+                    if (takeControl)
+                        midiIn = new MidiIn(i);
+                    else
+                        midiInDetected = true;
+
                     Console.WriteLine($@"Assigning MidiIn: {MidiIn.DeviceInfo(i).ProductName}");
                     break;
                 }
             }
         }
 
-        public void FindMidiOut()
+        public void FindMidiOut(bool takeControl = true)
         {
             for (int i = 0; i < MidiOut.NumberOfDevices; i++)
             {
                 Console.WriteLine("MIDI OUT: " + MidiOut.DeviceInfo(i).ProductName);
                 if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
                 {
-                    midiOut = new MidiOut(i);
+                    if (takeControl)
+                        midiOut = new MidiOut(i);
+                    else
+                        midiOutDetected = true;
+
                     Console.WriteLine($@"Assigning MidiOut: {MidiOut.DeviceInfo(i).ProductName}");
                     break;
                 }
