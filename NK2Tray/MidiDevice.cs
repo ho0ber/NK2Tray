@@ -43,6 +43,21 @@ namespace NK2Tray
         }
 
         public bool Found => (midiIn != null && midiOut != null);
+        public virtual void Setup(bool takeControl = true)
+        {
+            FindMidiIn(takeControl);
+            FindMidiOut(takeControl);
+
+            if (Found && takeControl)
+            {
+                ResetAllLights();
+                InitFaders();
+                InitButtons();
+                LightShow();
+                LoadAssignments();
+                ListenForMidi();
+            }
+        }
 
         public void FindMidiIn()
         {
