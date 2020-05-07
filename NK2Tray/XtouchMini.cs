@@ -61,19 +61,10 @@ namespace NK2Tray
             9      // faderChannelOverride
         );
 
-        public XtouchMini(AudioDevice audioDev)
+        public XtouchMini(AudioDevice audioDev, bool takeControl = true)
         {
             audioDevices = audioDev;
-            FindMidiIn();
-            FindMidiOut();
-            if (Found)
-            {
-                ResetAllLights();
-                InitFaders();
-                InitButtons();
-                LoadAssignments();
-                ListenForMidi();
-            }
+            Setup(takeControl);
         }
 
         public override void SetVolumeIndicator(int faderNum, float level)
