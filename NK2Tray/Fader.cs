@@ -96,6 +96,7 @@ namespace NK2Tray
         {
             pow = _pow;
             steps = calculateSteps();
+            parent.SetVolumeIndicator(faderNumber, assignment != null ? assignment.GetVolume() : -1);
         }
 
         private float[] calculateSteps()
@@ -291,10 +292,9 @@ namespace NK2Tray
                             nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
 
                         var newVol = steps[nextStepIndex];
-                        var newVolIndicator = (float)nextStepIndex / (float)(steps.Length - 1);
 
                         assignment.SetVolume(newVol);
-                        parent.SetVolumeIndicator(faderNumber, newVolIndicator);
+                        parent.SetVolumeIndicator(faderNumber, newVol);
                     }
                     else
                     {

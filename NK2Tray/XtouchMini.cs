@@ -76,16 +76,26 @@ namespace NK2Tray
             }
         }
 
-        public override void SetVolumeIndicator(int fader, float level)
+        public override void SetVolumeIndicator(int faderNum, float level)
         {
             if (level >= 0)
             {
-                var val = (int)Math.Round(level * 12) + 1 + 16 * 2;
-                Console.WriteLine($@"Setting fader {fader} display to {level} ({val})");
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(fader + 48), val).GetAsShortMessage());
+                var usedLevel = level;
+                var fader = faders[faderNum];
+
+                if (fader.faderDef.delta)
+                {
+                    var nearestStep = fader.steps.Select((x, i) => new { Index = i, Distance = Math.Abs(level - x) }).OrderBy(x => x.Distance).First().Index;
+                    usedLevel = (float)nearestStep / (fader.steps.Length - 1);
+                }
+
+                var val = (int)Math.Round(usedLevel * 12) + 1 + 16 * 2;
+
+                Console.WriteLine($@"Setting fader {fader} display to {usedLevel} ({val})");
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(faderNum + 48), val).GetAsShortMessage());
             }
             else
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(fader + 48), 0).GetAsShortMessage());
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(faderNum + 48), 0).GetAsShortMessage());
         }
 
         public override void ResetAllLights()
