@@ -290,5 +290,23 @@ namespace NK2Tray
             }
             return false;
         }
+
+        public bool GetMute()
+        {
+            if (sessionType == SessionType.Master)
+                return devices.GetDeviceByIdentifier(parentDeviceIdentifier).AudioEndpointVolume.Mute;
+
+            var targetAudioSessions = audioSessions;
+
+            if (sessionType == SessionType.Focus)
+            {
+                var pid = WindowTools.GetForegroundPID();
+                var mixerSession = devices.FindMixerSession(pid);
+                if (mixerSession == null) return false;
+                targetAudioSessions = mixerSession.audioSessions;
+            }
+
+            return targetAudioSessions.First().SimpleAudioVolume.Mute;
+        }
     }
 }
