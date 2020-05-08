@@ -83,6 +83,7 @@
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
+    <Compile Include="MidiDeviceWatcher.cs" />
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="MidiDevice.cs" />
     <Compile Include="MixerSession.cs" />
