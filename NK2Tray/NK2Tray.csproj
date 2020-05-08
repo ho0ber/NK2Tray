@@ -140,4 +140,12 @@
     <Error Condition="!Exists('..\packages\Fody.3.3.5\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.3.5\build\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Costura.Fody.3.3.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.3.3.0\build\Costura.Fody.props'))" />
   </Target>
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="3.3.0" />
+    <PackageReference Include="Fody" Version="3.3.35">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NAudio" Version="1.8.5" />
+  </ItemGroup>
 </Project>
