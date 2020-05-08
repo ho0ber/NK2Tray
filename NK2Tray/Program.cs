@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using Windows.Devices.Midi;
 
 namespace NK2Tray
 {
@@ -18,6 +19,7 @@ namespace NK2Tray
         public MidiDevice midiDevice;
         public List<MidiDevice> midiDevices;
         public AudioDevice audioDevices;
+        MidiDeviceWatcher inputDeviceWatcher;
         public bool logarithmic;
 
         private Dispatcher _workerDispatcher;
@@ -49,10 +51,15 @@ namespace NK2Tray
 
             trayIcon.Visible = true;
 
-            _workerDispatcher.Invoke(SetupDevice);
+            inputDeviceWatcher = new MidiDeviceWatcher(
+                MidiInPort.GetDeviceSelector(),
+                () => _workerDispatcher.Invoke(SetupDevice)
+            );
+
+            inputDeviceWatcher.StartWatcher();
         }
 
-        private Boolean SetupDevice()
+        private bool SetupDevice()
         {
             audioDevices = new AudioDevice();
 
@@ -79,24 +86,22 @@ namespace NK2Tray
             if (midiDevice == null)
                 midiDevice = PickNewDevice(midiDevices.First().name);
 
-            logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
-            SaveLogarithmic();
-
             return midiDevice.Found;
         }
 
         private MidiDevice PickNewDevice(string name)
         {
-            var newMidiDevice = midiDevices.Find(device => device.name == name);
-            if (newMidiDevice == null) return null;
+            if (midiDevice != null) midiDevice.Close();
+            midiDevice = midiDevices.Find(device => device.name == name);
 
-            newMidiDevice.Setup();
+            if (midiDevice != null)
+            {
+                midiDevice.Setup();
+                ConfigSaver.AddOrUpdateAppSettings("midi-device", midiDevice.name);
 
-            var oldMidiDevice = midiDevice;
-            midiDevice = newMidiDevice;
-            if (oldMidiDevice != null) oldMidiDevice.Close();
-
-            ConfigSaver.AddOrUpdateAppSettings("midi-device", midiDevice.name);
+                logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
+                SaveLogarithmic();
+            }
 
             return midiDevice;
         }
