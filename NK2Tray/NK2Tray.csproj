@@ -142,9 +142,10 @@
   </Target>
   <ItemGroup>
     <PackageReference Include="Costura.Fody" Version="3.3.0" />
-    <PackageReference Include="Fody" Version="3.3.35">
+    <PackageReference Include="Fody">
+      <Version>3.3.5</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NAudio" Version="1.8.5" />
   </ItemGroup>
