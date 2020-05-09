@@ -3,8 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
-
+using System.Windows.Threading;
 
 namespace NK2Tray
 {
@@ -17,22 +18,36 @@ namespace NK2Tray
         public MidiDevice midiDevice;
         public AudioDevice audioDevices;
 
+        private Dispatcher _workerDispatcher;
+        private Thread _workerThread;
+
         public SysTrayApp()
         {
             System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
             Console.WriteLine($@"NK2 Tray {DateTime.Now}");
+
+            // Set up a worker thread to always run SetupDevice and PopUp inside of
+            _workerThread = new Thread(new ThreadStart(() =>
+            {
+                _workerDispatcher = Dispatcher.CurrentDispatcher;
+                Dispatcher.Run();
+            }));
+
+            _workerThread.Start();
+
             trayIcon = new NotifyIcon
             {
                 Text = "NK2 Tray",
                 Icon = new Icon(Properties.Resources.nk2tray, 40, 40),
-
                 ContextMenu = new ContextMenu()
             };
-            trayIcon.ContextMenu.Popup += OnPopup;
+
+            trayIcon.ContextMenu.Popup += (object sender, EventArgs e) =>
+                _workerDispatcher.Invoke(() => OnPopup(sender, e));
 
             trayIcon.Visible = true;
 
-            SetupDevice();
+            _workerDispatcher.Invoke(SetupDevice);
         }
 
         private Boolean SetupDevice()
