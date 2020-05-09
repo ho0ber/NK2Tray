@@ -244,6 +244,7 @@ namespace NK2Tray
         {
             midiDevice.ResetAllLights();
             Application.Exit();
+            _workerDispatcher.InvokeShutdown();
         }
 
     }
