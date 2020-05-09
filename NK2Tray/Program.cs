@@ -102,6 +102,12 @@ namespace NK2Tray
         private void OnPopup(object sender, EventArgs e)
         {
             ContextMenu trayMenu = (ContextMenu)sender;
+
+            // Clean old menu items out
+            var oldMenuItems = trayMenu.MenuItems.Cast<MenuItem>().ToArray();
+            foreach (var item in oldMenuItems)
+                item.Dispose();
+
             trayMenu.MenuItems.Clear();
 
             var mixerSessions = audioDevices.GetCachedMixerSessions();
