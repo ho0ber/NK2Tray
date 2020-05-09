@@ -49,9 +49,6 @@ namespace NK2Tray
             trayIcon.Visible = true;
 
             _workerDispatcher.Invoke(SetupDevice);
-
-            logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
-            SaveLogarithmic();
         }
 
         private Boolean SetupDevice()
@@ -63,6 +60,9 @@ namespace NK2Tray
                 midiDevice = new XtouchMini(audioDevices);
 
             audioDevices.midiDevice = midiDevice;
+
+            logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
+            SaveLogarithmic();
 
             return midiDevice.Found;
         }
