@@ -7,16 +7,16 @@ namespace NK2Tray
     public class EasyControl : MidiDevice
     {
         public override string SearchString => "easy";
-        public override FaderDef DefaultFaderDef => new FaderDef(
+        public FaderDef FirstFourFaderDef => new FaderDef(
             false, // delta
             127f,   // range
             1,     // channel
             false,  // selectPresent
             true,  // mutePresent
             false,  // recordPresent
-            0,     // faderOffset
+            14,     // faderOffset
             23,    // selectOffset
-            48,    // muteOffset
+            9,    // muteOffset
             64,    // recordOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
@@ -24,17 +24,51 @@ namespace NK2Tray
             MidiCommandCode.ControlChange // recordCode
         );
 
-        public FaderDef HorizntalFaderDef => new FaderDef(
+        public FaderDef SecondFiveFaderDef => new FaderDef(
             false, // delta
             127f,   // range
             1,     // channel
             false,  // selectPresent
             true,  // mutePresent
             false,  // recordPresent
-            0,     // faderOffset
+            14,     // faderOffset
             23,    // selectOffset
-            -8,    // muteOffset
+            10,    // muteOffset
             64,    // recordOffset
+            MidiCommandCode.ControlChange, // faderCode
+            MidiCommandCode.ControlChange, // selectCode
+            MidiCommandCode.ControlChange, // muteCode
+            MidiCommandCode.ControlChange // recordCode
+        );
+
+        public FaderDef KnobFaderDef => new FaderDef(
+            false, // delta
+            127f,   // range
+            1,     // channel
+            true,  // selectPresent
+            true,  // mutePresent
+            false,  // recordPresent
+            1,     // faderOffset
+            55,    // selectOffset
+            58,    // muteOffset
+            64,    // recordOffset
+            MidiCommandCode.ControlChange, // faderCode
+            MidiCommandCode.ControlChange, // selectCode
+            MidiCommandCode.ControlChange, // muteCode
+            MidiCommandCode.ControlChange // recordCode
+        );
+
+        public FaderDef HorizontalFaderDef => new FaderDef(
+            false, // delta
+            127f,   // range
+            1,     // channel
+            true,  // selectPresent
+            true,  // mutePresent
+            true,  // recordPresent
+            -1,     // faderOffset
+            -8,    // selectOffset
+            -9,    // muteOffset
+            17,    // recordOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
@@ -46,6 +80,7 @@ namespace NK2Tray
             audioDevices = audioDev;
             FindMidiIn();
             FindMidiOut();
+
             if (Found)
             {
                 ResetAllLights();
@@ -71,22 +106,31 @@ namespace NK2Tray
         {
             faders = new List<Fader>();
 
-            foreach (var i in Enumerable.Range(0, 10))
+            foreach (var i in Enumerable.Range(0, 11))
             {
-                Fader fader = (i < 9) ? new Fader(this, i) : new Fader(this, i, this.HorizntalFaderDef);
+                Fader fader = new Fader(this, i, SelectFaderDef(i));
                 fader.ResetLights();
                 faders.Add(fader);
             }
         }
 
+        public FaderDef SelectFaderDef(int faderNum)
+        {
+            if (faderNum < 4) return FirstFourFaderDef;
+            if (faderNum < 9) return SecondFiveFaderDef;
+            if (faderNum == 9) return KnobFaderDef;
+
+            return HorizontalFaderDef;
+        }
+
         public override void InitButtons()
         {
             buttons = new List<Button>();
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPrevious, 47, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaNext,     48, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaStop,     46, false));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPlay,     45, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaRecord,   44, false));
+            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPrevious, 34, true));
+            buttons.Add(new Button(ref midiOut,  ButtonType.MediaNext,     35, true));
+            buttons.Add(new Button(ref midiOut,  ButtonType.MediaStop,     36, false));
+            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPlay,     37, true));
+            buttons.Add(new Button(ref midiOut,  ButtonType.MediaRecord,   38, false));
         }
     }
 }
