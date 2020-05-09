@@ -15,9 +15,9 @@ namespace NK2Tray
             true,  // mutePresent
             false,  // recordPresent
             14,     // faderOffset
-            23,    // selectOffset
+            0,    // selectOffset
             23,    // muteOffset
-            64,    // recordOffset
+            0,    // recordOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
@@ -32,9 +32,9 @@ namespace NK2Tray
             true,  // mutePresent
             false,  // recordPresent
             14,     // faderOffset
-            23,    // selectOffset
+            0,    // selectOffset
             24,    // muteOffset
-            64,    // recordOffset
+            0,    // recordOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
@@ -51,7 +51,7 @@ namespace NK2Tray
             1,     // faderOffset
             55,    // selectOffset
             58,    // muteOffset
-            64,    // recordOffset
+            0,    // recordOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
