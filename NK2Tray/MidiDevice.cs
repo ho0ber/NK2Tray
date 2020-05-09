@@ -147,6 +147,10 @@ namespace NK2Tray
             buttons = new List<Button>();
         }
 
+        public void SetCurve(float pow)
+        {
+            faders.ForEach(fader => fader.SetCurve(pow));
+        }
 
         public void LoadAssignments()
         {

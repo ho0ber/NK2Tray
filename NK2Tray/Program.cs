@@ -17,6 +17,7 @@ namespace NK2Tray
         private NotifyIcon trayIcon;
         public MidiDevice midiDevice;
         public AudioDevice audioDevices;
+        public bool logarithmic;
 
         private Dispatcher _workerDispatcher;
         private Thread _workerThread;
@@ -48,6 +49,9 @@ namespace NK2Tray
             trayIcon.Visible = true;
 
             _workerDispatcher.Invoke(SetupDevice);
+
+            logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
+            SaveLogarithmic();
         }
 
         private Boolean SetupDevice()
@@ -190,7 +194,27 @@ namespace NK2Tray
                 faderMenu.MenuItems.Add(unassignItem);                
             }
 
+            trayMenu.MenuItems.Add("-");
+
+            // Add toggle option for logarithmic volume curve
+            MenuItem logCheck = new MenuItem("Logarithmic", ToggleLogarithmic);
+            logCheck.Checked = logarithmic;
+            trayMenu.MenuItems.Add(logCheck);
+
+            trayMenu.MenuItems.Add("-");
             trayMenu.MenuItems.Add("Exit", OnExit);
+        }
+
+        private void ToggleLogarithmic(object sender, EventArgs e)
+        {
+            logarithmic = !logarithmic;
+            ConfigSaver.AddOrUpdateAppSettings("logarithmic", System.Convert.ToString(logarithmic));
+            SaveLogarithmic();
+        }
+
+        private void SaveLogarithmic()
+        {
+            midiDevice.SetCurve(logarithmic ? 2f : 1f);
         }
 
         private void AssignFader(object sender, EventArgs e)
