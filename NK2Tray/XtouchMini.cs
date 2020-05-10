@@ -9,57 +9,33 @@ namespace NK2Tray
     public class XtouchMini : MidiDevice
     {
         public override string SearchString => "x-touch mini";
-        public override FaderDef DefaultFaderDef => new FaderDef(
-            true,  // delta
-            64f,   // range
-            1,     // channel
-            true,  // selectPresent
-            true,  // mutePresent
-            false, // recordPresent
-            16,    // faderOffset
-            32,    // selectOffset
-            38,    // muteOffset
-            0,     // recordOffset
-            MidiCommandCode.ControlChange, // faderCode
-            MidiCommandCode.NoteOn,        // selectCode
-            MidiCommandCode.NoteOn,        // muteCode
-            MidiCommandCode.ControlChange  // recordCode
-        );
 
-        public FaderDef FirstTwoFaderDef => new FaderDef(
-            true,  // delta
-            64f,   // range
-            1,     // channel
-            true,  // selectPresent
-            true,  // mutePresent
-            false, // recordPresent
-            16,    // faderOffset
-            32,    // selectOffset
-            89,    // muteOffset
-            0,     // recordOffset
-            MidiCommandCode.ControlChange, // faderCode
-            MidiCommandCode.NoteOn,        // selectCode
-            MidiCommandCode.NoteOn,        // muteCode
-            MidiCommandCode.ControlChange  // recordCode
-        );
+        public override FaderDef DefaultFaderDef => new FaderDef(new FaderDefOpts()
+        {
+            Delta = true,
+            Range = 64f,
+            Offset = 16,
+            Select = new FaderDefButtonOpts() { Offset = 32 },
+            Mute = new FaderDefButtonOpts() { Offset = 38 }
+        });
 
-        public FaderDef MasterFaderDef => new FaderDef(
-            false,  // delta
-            16256f, // range
-            1,      // channel
-            true,   // selectPresent
-            true,   // mutePresent
-            false,  // recordPresent
-            0,      // faderOffset
-            76,     // selectOffset
-            77,     // muteOffset
-            0,      // recordOffset
-            MidiCommandCode.PitchWheelChange, // faderCode
-            MidiCommandCode.NoteOn,           // selectCode
-            MidiCommandCode.NoteOn,           // muteCode
-            MidiCommandCode.ControlChange,    // recordCode
-            9      // faderChannelOverride
-        );
+        public FaderDef FirstTwoFaderDef => new FaderDef(new FaderDefOpts()
+        {
+            Delta = true,
+            Range = 64f,
+            Offset = 16,
+            Select = new FaderDefButtonOpts() { Offset = 32 },
+            Mute = new FaderDefButtonOpts() { Offset = 89 }
+        });
+
+        public FaderDef MasterFaderDef => new FaderDef(new FaderDefOpts()
+        {
+            Range = 16256f,
+            Channel = 9,
+            Code = MidiCommandCode.PitchWheelChange,
+            Select = new FaderDefButtonOpts() { Offset = 76, Channel = 1 },
+            Mute = new FaderDefButtonOpts() { Offset = 77, Channel = 1 }
+        });
 
         public XtouchMini(AudioDevice audioDev)
         {
