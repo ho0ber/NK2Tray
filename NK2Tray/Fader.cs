@@ -1,10 +1,43 @@
 ﻿using NAudio.Midi;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace NK2Tray
 {
+    public class FaderDefButtonOpts
+    {
+        public int Offset { get; set; }
+        public MidiCommandCode Code { get; set; }
+        public int? Channel { get; set; }
+
+        public FaderDefButtonOpts()
+        {
+            Offset = 0;
+            Code = MidiCommandCode.NoteOn;
+        }
+    }
+
+    public class FaderDefOpts
+    {
+        public bool Delta { get; set; }
+        public float Range { get; set; }
+        public int Channel { get; set; }
+        public int Offset { get; set; }
+        public MidiCommandCode Code { get; set; }
+        public FaderDefButtonOpts Select { get; set; }
+        public FaderDefButtonOpts Mute { get; set; }
+        public FaderDefButtonOpts Record { get; set; }
+
+        public FaderDefOpts()
+        {
+            Delta = false;
+            Range = 127f;
+            Channel = 1;
+            Offset = 0;
+            Code = MidiCommandCode.ControlChange;
+        }
+    }
+
     public class FaderDef
     {
         public bool delta;
