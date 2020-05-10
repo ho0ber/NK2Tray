@@ -281,6 +281,8 @@ namespace NK2Tray
                         assignment = newAssignment;
                     }
 
+                    float newVol;
+
                     if (faderDef.delta)
                     {
                         var val = GetValue(e.MidiEvent);
@@ -295,18 +297,34 @@ namespace NK2Tray
                         else
                             nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
 
-                        var newVol = steps[nextStepIndex];
+                        newVol = steps[nextStepIndex];
 
                         assignment.SetVolume(newVol);
                         parent.SetVolumeIndicator(faderNumber, newVol);
                     }
                     else
                     {
-                        assignment.SetVolume(getVolFromStage(GetValue(e.MidiEvent)));
+                        newVol = getVolFromStage(GetValue(e.MidiEvent));
+                        assignment.SetVolume(newVol);
                     }
 
                     if (assignment.IsDead())
+                    {
                         SetRecordLight(true);
+
+                        return true;
+                    }
+
+                    // see if we need to set any other volume indicators
+                    foreach (var fader in parent.faders)
+                    {
+                        if (fader.faderNumber == faderNumber) continue;
+                        if (!fader.faderDef.delta) continue;
+                        if (fader.assignment == null) continue;
+                        if (fader.assignment.label != assignment.label) continue;
+
+                        fader.parent.SetVolumeIndicator(fader.faderNumber, newVol);
+                    }
 
                     return true;
                 }
