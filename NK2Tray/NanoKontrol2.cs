@@ -8,22 +8,14 @@ namespace NK2Tray
     public class NanoKontrol2 : MidiDevice
     {
         public override string SearchString => "nano";
-        public override FaderDef DefaultFaderDef => new FaderDef(
-            false, // delta
-            127f,   // range
-            1,     // channel
-            true,  // selectPresent
-            true,  // mutePresent
-            true,  // recordPresent
-            0,     // faderOffset
-            32,    // selectOffset
-            48,    // muteOffset
-            64,    // recordOffset
-            MidiCommandCode.ControlChange, // faderCode
-            MidiCommandCode.ControlChange, // selectCode
-            MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
-        );
+
+        public override FaderDef DefaultFaderDef => new FaderDef(new FaderDefOpts()
+        {
+            Range = 127f,
+            Select = new FaderDefButtonOpts() { Code = MidiCommandCode.ControlChange, Offset = 32 },
+            Mute = new FaderDefButtonOpts() { Code = MidiCommandCode.ControlChange, Offset = 48 },
+            Record = new FaderDefButtonOpts() { Code = MidiCommandCode.ControlChange, Offset = 64 }
+        });
 
         public NanoKontrol2(AudioDevice audioDev)
         {
