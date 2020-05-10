@@ -251,6 +251,76 @@ namespace NK2Tray
             return 0;
         }
 
+        public List<Fader> GetMatchingFaders()
+        {
+            MixerSession focusMixerSession = null;
+
+            bool haveFocusSlider = parent.faders.Any(fader => (
+                fader.assignment != null
+                && fader.assignment.sessionType == SessionType.Focus
+            ));
+
+            if (haveFocusSlider)
+            {
+                int pid = WindowTools.GetForegroundPID();
+                focusMixerSession = assignment.devices.FindMixerSession(pid);
+            }
+
+            if (assignment == null)
+                return parent.faders.FindAll(fader => fader.assignment == null);
+
+            if (assignment.sessionType == SessionType.Master)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+                    if (fader.assignment.sessionType != SessionType.Master) return false;
+
+                    return fader.assignment.parentDeviceIdentifier == assignment.parentDeviceIdentifier;
+                });
+            }
+
+            if (assignment.sessionType == SessionType.Focus)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+                    if (fader.assignment.sessionType == SessionType.Focus) return true;
+
+                    return fader.assignment.HasCrossoverProcesses(focusMixerSession);
+                });
+            }
+
+            if (assignment.sessionType == SessionType.Application)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+
+                    if (fader.assignment.sessionType == SessionType.Application)
+                        return fader.assignment.HasCrossoverProcesses(assignment);
+
+                    if (fader.assignment.sessionType == SessionType.Focus)
+                        return assignment.HasCrossoverProcesses(focusMixerSession);
+
+                    return false;
+                });
+            }
+
+            if (assignment.sessionType == SessionType.SystemSounds)
+            {
+                return parent.faders.FindAll(fader => (
+                    fader.assignment != null
+                    && fader.assignment.sessionType == SessionType.SystemSounds
+                ));
+            }
+
+            return new List<Fader>();
+        }
+
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
             if (!IsHandling())
