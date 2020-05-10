@@ -362,9 +362,26 @@ namespace NK2Tray
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
 
-                    SetMuteLight(assignment.ToggleMute());
+                    var muteStatus = assignment.ToggleMute();
+                    SetMuteLight(muteStatus);
+
                     if (assignment.IsDead())
+                    {
                         SetRecordLight(true);
+
+                        return true;
+                    }
+
+                    // see if we need to illuminate any other lights
+                    foreach (var fader in parent.faders)
+                    {
+                        if (fader.faderNumber == faderNumber) continue;
+                        if (fader.assignment == null) continue;
+                        if (fader.assignment.label != assignment.label) continue;
+
+                        fader.SetMuteLight(muteStatus);
+                    }
+
                     return true;
                 }
 
