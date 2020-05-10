@@ -59,30 +59,40 @@ namespace NK2Tray
         public int muteChannelOverride;
         public int recordChannelOverride;
 
-        public FaderDef(bool _delta, float _range, int _channel,
-            bool _selectPresent, bool _mutePresent, bool _recordPresent,
-            int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset,
-            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode,
-            int _faderChannelOverride = -1, int _selectChannelOverride = -1, int _muteChannelOverride = -1, int _recordChannelOverride = -1)
+        public FaderDef(FaderDefOpts opts)
         {
-            delta = _delta;
-            range = _range;
-            channel = _channel;
-            selectPresent = _selectPresent;
-            mutePresent = _mutePresent;
-            recordPresent = _recordPresent;
-            faderOffset = _faderOffset;
-            selectOffset = _selectOffset;
-            muteOffset = _muteOffset;
-            recordOffset = _recordOffset;
-            faderCode = _faderCode;
-            selectCode = _selectCode;
-            muteCode = _muteCode;
-            recordCode = _recordCode;
-            faderChannelOverride = _faderChannelOverride;
-            selectChannelOverride = _selectChannelOverride;
-            muteChannelOverride = _muteChannelOverride;
-            recordChannelOverride = _recordChannelOverride;
+            delta = opts.Delta;
+            range = opts.Range;
+            channel = opts.Channel;
+            
+            faderOffset = opts.Offset;
+            faderCode = opts.Code;
+            faderChannelOverride = -1;
+
+            selectPresent = opts.Select != null;
+            mutePresent = opts.Mute != null;
+            recordPresent = opts.Record != null;
+
+            if (selectPresent)
+            {
+                selectOffset = opts.Select.Offset;
+                selectCode = opts.Select.Code;
+                selectChannelOverride = opts.Select.Channel ?? -1;
+            }
+
+            if (mutePresent)
+            {
+                muteOffset = opts.Mute.Offset;
+                muteCode = opts.Mute.Code;
+                muteChannelOverride = opts.Mute.Channel ?? -1;
+            }
+
+            if (recordPresent)
+            {
+                recordOffset = opts.Record.Offset;
+                recordCode = opts.Record.Code;
+                recordChannelOverride = opts.Record.Channel ?? -1;
+            }
         }
     }
 
