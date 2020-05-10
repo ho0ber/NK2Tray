@@ -368,9 +368,7 @@ namespace NK2Tray
                             nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
 
                         newVol = steps[nextStepIndex];
-
                         assignment.SetVolume(newVol);
-                        parent.SetVolumeIndicator(faderNumber, newVol);
                     }
                     else
                     {
@@ -385,16 +383,8 @@ namespace NK2Tray
                         return true;
                     }
 
-                    // see if we need to set any other volume indicators
-                    foreach (var fader in parent.faders)
-                    {
-                        if (fader.faderNumber == faderNumber) continue;
-                        if (!fader.faderDef.delta) continue;
-                        if (fader.assignment == null) continue;
-                        if (fader.assignment.label != assignment.label) continue;
-
-                        fader.parent.SetVolumeIndicator(fader.faderNumber, newVol);
-                    }
+                    List<Fader> fadersToAffect = GetMatchingFaders();
+                    fadersToAffect.ForEach(fader => fader.parent.SetVolumeIndicator(fader.faderNumber, newVol));
 
                     return true;
                 }
@@ -442,15 +432,8 @@ namespace NK2Tray
                         return true;
                     }
 
-                    // see if we need to illuminate any other lights
-                    foreach (var fader in parent.faders)
-                    {
-                        if (fader.faderNumber == faderNumber) continue;
-                        if (fader.assignment == null) continue;
-                        if (fader.assignment.label != assignment.label) continue;
-
-                        fader.SetMuteLight(muteStatus);
-                    }
+                    List<Fader> fadersToAffect = GetMatchingFaders();
+                    fadersToAffect.ForEach(fader => fader.SetMuteLight(muteStatus));
 
                     return true;
                 }
