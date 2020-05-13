@@ -11,22 +11,22 @@ namespace NK2Tray
     /**
      * Manages keeping an eye over audio devices and their volume mixer sessions, keeping
      * them updated and properly linked at all times.
-     * 
+     *
      * First, a DeviceNotificationClient is attached to a generic MMDeviceEnumerator so
      * we can handle when audio devices are added/removed/updated, including setting a
      * new default device.
-     * 
+     *
      * For each device registered, we register a SessionCreatedDelegate to watch for created
      * sessions so we can register them. A session in this instance is an entry in the
      * Windows Volume Mixer. We also iterate through existing sessions and register them too.
-     * 
+     *
      * For each session registered, we register a SessionNotificationClient used to watch
      * for things like volume changes, state changes, and renames.
-     * 
+     *
      * All of this received information is stored in two easy lists: Devices and Sessions,
      * available for consumption by any part of the app.
      */
-    class AudioDeviceWatcher
+    public class AudioDeviceWatcher
     {
         private readonly MMDeviceEnumerator deviceEnum = new MMDeviceEnumerator();
         // Used once to watch for incoming/outgoing devices
@@ -43,6 +43,7 @@ namespace NK2Tray
         // a lot slower as a result, causing UI/performance lag.
         public Dictionary<MMDevice, string> QuickDeviceNames = new Dictionary<MMDevice, string>();
         public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
+        public MidiDevice MidiDevice;
 
         public AudioDeviceWatcher()
         {
