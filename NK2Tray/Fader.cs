@@ -174,6 +174,7 @@ namespace NK2Tray
             SetMuteLight(assigned ? assignment.GetMute() : false);
         }
 
+        /*
         private void MixerSession_VolumeChanged(object sender, VolumeChangedEventArgs e)
         {
             var faders = GetMatchingFaders();
@@ -184,6 +185,7 @@ namespace NK2Tray
                 fader.SetMuteLight(e.isMuted);
             }
         }
+        */
 
         /*
         public void AssignInactive(string ident)
