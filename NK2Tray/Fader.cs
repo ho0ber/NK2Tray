@@ -456,7 +456,7 @@ namespace NK2Tray
                     Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
                     if (assigned)
                     {
-                        Unassign();
+                        Assign();
                         parent.SaveAssignments();
                     }
                     else
