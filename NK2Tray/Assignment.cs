@@ -16,17 +16,20 @@ namespace NK2Tray
 
         public event EventHandler VolumeChanged;
         public event EventHandler MuteChanged;
+        public string Label;
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher, MMDevice device)
         {
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.device = device;
+            this.Label = audioDeviceWatcher.QuickDeviceNames[device];
         }
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher, string sessionId)
         {
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.sessionId = sessionId;
+            this.Label = audioDeviceWatcher.Sessions[sessionId].First().DisplayName;
         }
 
         public virtual float GetVolume()
