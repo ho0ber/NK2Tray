@@ -128,7 +128,7 @@ namespace NK2Tray
 
                 // Add devices
                 faderItem.MenuItems.AddRange(audioDeviceWatcher.Devices.Select(device =>
-                    new MenuItem(audioDeviceWatcher.QuickDeviceNames[device], AssignFader){ Tag = new object[]{ fader, device }}
+                    new MenuItem(audioDeviceWatcher.QuickDeviceNames[device], AssignFader){ Tag = new object[]{ fader, device, null }}
                 ).ToArray());
 
                 faderItem.MenuItems.Add("-");
@@ -142,14 +142,14 @@ namespace NK2Tray
 
                 // Add applications
                 faderItem.MenuItems.AddRange(audioDeviceWatcher.Sessions.Select(pair =>
-                    new MenuItem(pair.Value.First().DisplayName, AssignFader){ Tag = new object[] { fader, pair.Value }}
+                    new MenuItem(pair.Value.First().DisplayName, AssignFader){ Tag = new object[] { fader, null, pair.Key }}
                 ).ToArray());
 
                 // Add unassign
                 faderItem.MenuItems.Add(
                     new MenuItem("Unassign")
                 );
-                
+
                 return faderItem;
             }).ToArray());
 
@@ -178,16 +178,27 @@ namespace NK2Tray
 
         private void AssignFader(object sender, EventArgs e)
         {
-            var fader = (Fader)((object[])((MenuItem)sender).Tag)[0];
-            var mixerSession = (MixerSession)((object[])((MenuItem)sender).Tag)[1];
-            fader.Assign(mixerSession);
+            var parsedTag = ((object[])((MenuItem)sender).Tag);
+            var fader = (Fader)parsedTag[0];
+            var device = (NAudio.CoreAudioApi.MMDevice)parsedTag[1];
+            var sessionId = (string)parsedTag[2];
+
+            if (device != null)
+            {
+                fader.Assign(device);
+            }
+            else if (sessionId != null)
+            {
+                fader.Assign(sessionId);
+            }
+
             midiDevice.SaveAssignments();
         }
 
         private void UnassignFader(object sender, EventArgs e)
         {
             var fader = (Fader)((object[])((MenuItem)sender).Tag)[0];
-            fader.Unassign();
+            fader.Assign();
             midiDevice.SaveAssignments();
         }
 
