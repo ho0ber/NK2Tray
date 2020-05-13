@@ -16,7 +16,6 @@ namespace NK2Tray
 
         private NotifyIcon trayIcon;
         public MidiDevice midiDevice;
-        public AudioDevice audioDevices;
         public bool logarithmic;
 
         private Dispatcher _workerDispatcher;
@@ -55,13 +54,12 @@ namespace NK2Tray
         private Boolean SetupDevice()
         {
             audioDeviceWatcher = new AudioDeviceWatcher();
-            audioDevices = new AudioDevice();
 
-            midiDevice = new NanoKontrol2(audioDevices);
+            midiDevice = new NanoKontrol2(audioDeviceWatcher);
             if (!midiDevice.Found)
-                midiDevice = new XtouchMini(audioDevices);
+                midiDevice = new XtouchMini(audioDeviceWatcher);
 
-            audioDevices.midiDevice = midiDevice;
+            audioDeviceWatcher.MidiDevice = midiDevice;
 
             logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));
             SaveLogarithmic();
