@@ -1,4 +1,5 @@
 ﻿using NAudio.Midi;
+using NK2Tray.utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,10 +57,10 @@ namespace NK2Tray
     public class Fader
     {
         private bool activeHandling = false;
-
         private bool selectLight = false;
         private bool muteLight = false;
         private bool recordLight = false;
+        private ThrottledEventHandler<VolumeChangedEventArgs> volumeChangedHandler;
 
         public int faderNumber;
         public FaderDef faderDef;
@@ -81,6 +82,7 @@ namespace NK2Tray
             faderNumber = faderNum;
             faderDef = parent.DefaultFaderDef;
             SetCurve(1f);
+            volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
         }
 
         public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
@@ -90,6 +92,7 @@ namespace NK2Tray
             faderNumber = faderNum;
             faderDef = _faderDef;
             SetCurve(1f);
+            volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
         }
 
         public void SetCurve(float _pow)
@@ -134,12 +137,22 @@ namespace NK2Tray
             SetRecordLight(false);
             SetMuteLight(mixerSession.GetMute());
 
+            // Subscribe to mixer session volume changes
+            mixerSession.VolumeChanged += volumeChangedHandler;
+
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, mixerSession.GetVolume());
         }
 
+        private void MixerSession_VolumeChanged(object sender, VolumeChangedEventArgs e)
+        {
+            parent.SetVolumeIndicator(this.faderNumber, e.volume);
+            SetMuteLight(e.isMuted);
+        }
+
         public void AssignInactive(string ident)
         {
+            if (assignment != null) assignment.VolumeChanged -= volumeChangedHandler;
             identifier = ident;
             convertToApplicationPath(identifier);
             assigned = false;
@@ -150,12 +163,14 @@ namespace NK2Tray
 
         public void Unassign()
         {
+            if (assignment != null) assignment.VolumeChanged -= volumeChangedHandler;
             assigned = false;
             assignment = null;
             SetSelectLight(false);
             SetRecordLight(false);
             SetMuteLight(false);
             identifier = "";
+
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, -1);
         }
