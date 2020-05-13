@@ -52,34 +52,7 @@ namespace NK2Tray
         {
             Console.WriteLine("OnSessionCreated");        
             midiDevice.LoadAssignments();
-
-            // These correspond with the below events handlers
-            //NAudioEventCallbacks callbacks = new NAudioEventCallbacks();
-            //AudioSessionEventsCallback notifications = new AudioSessionEventsCallback(callbacks);
-            //audioSession.RegisterEventClient(callbacks);
         }
-
-
-
-        /*
-        // Saving these for later because I'll definitely need them.
-        public class NAudioEventCallbacks : IAudioSessionEventsHandler
-        {
-            public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
-
-            public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
-
-            public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
-
-            public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
-
-            public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
-
-            public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
-
-            public void OnVolumeChanged(float volume, bool isMuted) { Console.WriteLine("OnVolumeChanged"); }
-        }
-        */
 
         public List<MixerSession> GetCachedMixerSessions()
         {
