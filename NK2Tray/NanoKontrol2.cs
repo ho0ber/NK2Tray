@@ -25,9 +25,9 @@ namespace NK2Tray
             MidiCommandCode.ControlChange // recordCode
         );
 
-        public NanoKontrol2(AudioDevice audioDev)
+        public NanoKontrol2(AudioDeviceWatcher audioDeviceWatcher)
         {
-            audioDevices = audioDev;
+            this.audioDeviceWatcher = audioDeviceWatcher;
             FindMidiIn();
             FindMidiOut();
             if (Found)

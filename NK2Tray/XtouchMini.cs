@@ -61,9 +61,9 @@ namespace NK2Tray
             9      // faderChannelOverride
         );
 
-        public XtouchMini(AudioDevice audioDev)
+        public XtouchMini(AudioDeviceWatcher audioDeviceWatcher)
         {
-            audioDevices = audioDev;
+            this.audioDeviceWatcher = audioDeviceWatcher;
             FindMidiIn();
             FindMidiOut();
             if (Found)
@@ -117,7 +117,7 @@ namespace NK2Tray
         public override void InitFaders()
         {
             faders = new List<Fader>();
-            
+
             foreach (var i in Enumerable.Range(0, 9))
             {
                 Fader fader = new Fader(this, i, SelectFaderDef(i));
