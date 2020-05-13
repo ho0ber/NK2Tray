@@ -2,9 +2,8 @@
 using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static NAudio.CoreAudioApi.AudioSessionManager;
 
 namespace NK2Tray
@@ -21,7 +20,8 @@ namespace NK2Tray
 
         public MMDevice DefaultDevice;
         public List<MMDevice> Devices = new List<MMDevice>();
-        public List<AudioSessionControl> Sessions = new List<AudioSessionControl>();
+        public Dictionary<MMDevice, string> QuickDeviceNames = new Dictionary<MMDevice, string>();
+        public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
 
         public AudioDeviceWatcher()
         {
@@ -47,62 +47,71 @@ namespace NK2Tray
             return (object sender, IAudioSessionControl session) => OnSessionCreated(device, sender, session);
         }
 
-        /*
-        private SessionNotificationClient GetSessionEventHandler(MMDevice device)
-        {
-            return new SessionNotificationClient(this, device);
-        }
-        */
-
         private void SetupDevice(MMDevice device)
         {
             sessionHandlerMap[device] = GetSessionCreatedHandler(device);
             device.AudioSessionManager.OnSessionCreated += sessionHandlerMap[device];
 
-            // This never triggers lol. Have to do per session
-            //device.AudioSessionManager.AudioSessionControl.RegisterEventClient(new SessionNotificationClient(this, device));
+            // Set device name for later
+            QuickDeviceNames.Add(device, device.FriendlyName);
 
             for (int i = 0; i < device.AudioSessionManager.Sessions.Count; i++)
             {
                 var session = device.AudioSessionManager.Sessions[i];
                 AddSession(device, session);
             }
+        }
 
-            /*
-            device.AudioSessionManager.AudioSessionControl.RegisterEventClient
+        private string GetSessionId(AudioSessionControl session)
+        {
+            var pipeLoc = session.GetSessionIdentifier.IndexOf("|");
+            var len = session.GetSessionIdentifier.Length;
+            var id = session.GetSessionIdentifier.Substring(pipeLoc + 1, len - pipeLoc - 1);
 
-            foreach (var session in device.AudioSessionManager.Sessions)
-            {
-                sessionEventMap[device] = GetSessionEventHandler(device);
-                device.AudioSessionManager.AudioSessionControl.RegisterEventClient(sessionEventMap[device]);
-            }
-            */
+            return id;
         }
 
         public void AddSession(MMDevice device, AudioSessionControl session)
         {
             if (session.State == AudioSessionState.AudioSessionStateExpired) return;
+
+            // Get ident.
+            var id = GetSessionId(session);
+            var processId = (int)session.GetProcessID;
+
+            // Set name.
+            Process process = Process.GetProcessById(processId);
+
+            if (session.DisplayName == null || session.DisplayName == "")
+                session.DisplayName = process != null ? process.ProcessName : id;
+
+            // Push
+            if (!Sessions.ContainsKey(id)) Sessions[id] = new List<AudioSessionControl>();
+            if (Sessions[id].Contains(session)) return;
+
             sessionEventMap[session] = new SessionNotificationClient(this, device, session);
             session.RegisterEventClient(sessionEventMap[session]);
-            Sessions.Add(session);
-        }
-
-        private void DisposeSession(AudioSessionControl session)
-        {
-            session.UnRegisterEventClient(sessionEventMap[session]);
-            sessionEventMap.Remove(session);
+            Sessions[id].Add(session);
         }
 
         public void RemoveSession(AudioSessionControl session)
         {
-            DisposeSession(session);
-            Sessions.Remove(session);
+            session.UnRegisterEventClient(sessionEventMap[session]);
+            sessionEventMap.Remove(session);
+
+            var id = GetSessionId(session);
+
+            Sessions[id].Remove(session);
+            if (Sessions[id].Count == 0) Sessions.Remove(id);
         }
 
         private void DisposeDevice(MMDevice device)
         {
             device.AudioSessionManager.OnSessionCreated -= sessionHandlerMap[device];
             sessionHandlerMap.Remove(device);
+
+            // Let go of device name
+            QuickDeviceNames.Remove(device);
         }
 
         public MMDevice FindDevice(string deviceId)
@@ -312,6 +321,16 @@ namespace NK2Tray
         // Parameters:
         //   state:
         //     The new session state.
-        public void OnStateChanged(AudioSessionState state) { }
+        public void OnStateChanged(AudioSessionState state)
+        {
+            if (state != AudioSessionState.AudioSessionStateExpired)
+            {
+                _audioDeviceWatcher.AddSession(_device, _session);
+            }
+            else
+            {
+                _audioDeviceWatcher.RemoveSession(_session);
+            }
+        }
     }
 }
