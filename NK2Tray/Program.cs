@@ -87,22 +87,6 @@ namespace NK2Tray
             Application.Exit();
         }
 
-        private String getProgramLabel(Fader fader)
-        {
-            if (fader.assigned)
-                return fader.assignment.label;
-
-            if(fader.identifier != null && fader.identifier.Length > 0 && fader.identifier.Contains(".exe"))
-            {
-                String identifier = fader.identifier;
-                int lastBackSlash = identifier.LastIndexOf('\\') + 1;
-                int programNameLength = identifier.IndexOf(".exe") - lastBackSlash;
-                String progamName = identifier.Substring(lastBackSlash, programNameLength);
-                return progamName;
-            }
-            return "";
-        }
-
         private void OnPopup(object sender, EventArgs e)
         {
             // Dont create context menu if no midi device is connected
@@ -124,7 +108,7 @@ namespace NK2Tray
 
             trayMenu.MenuItems.AddRange(midiDevice.faders.Select(fader =>
             {
-                var faderItem = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
+                var faderItem = new MenuItem($@"Fader {fader.faderNumber + 1} - " + fader.assignment?.Label);
 
                 // Add devices
                 faderItem.MenuItems.AddRange(audioDeviceWatcher.Devices.Select(device =>
