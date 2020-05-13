@@ -76,7 +76,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AudioDevice.cs" />
     <Compile Include="AudioDeviceWatcher.cs" />
     <Compile Include="Button.cs" />
     <Compile Include="ConfigSaver.cs" />
@@ -86,7 +85,6 @@
     <Compile Include="MediaTools.cs" />
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="MidiDevice.cs" />
-    <Compile Include="MixerSession.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
