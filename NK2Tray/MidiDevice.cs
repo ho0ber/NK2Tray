@@ -3,8 +3,6 @@ using NAudio.Midi;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 
@@ -31,7 +29,7 @@ namespace NK2Tray
         public List<Button> buttons;
         public Hashtable buttonsMappingTable;
 
-        public AudioDevice audioDevices;
+        public AudioDeviceWatcher audioDeviceWatcher;
 
         public virtual string SearchString => "wobbo";
 
@@ -174,23 +172,23 @@ namespace NK2Tray
                         foundAssignments = true;
                         MMDevice mmDevice = audioDevices.GetDeviceByIdentifier(ident.IndexOf("|") >= 0 ? ident.Substring(ident.IndexOf("|")+1) : "");
                         fader.Assign(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
-                    }                    
+                    }
                     else if (ident.Length > 0)
                     {
                         foundAssignments = true;
                         var matchingSession = audioDevices.FindMixerSession(ident);
                         if (matchingSession != null)
                             fader.Assign(matchingSession);
-                        else
-                            fader.AssignInactive(ident);
+                        // else
+                            // fader.AssignInactive(ident);
                     }
                     else
                     {
                         fader.Unassign();
                     }
                 }
-            }            
-            
+            }
+
             // Load fader 8 as master volume control as default if no faders are set
             if (!foundAssignments)
             {
@@ -200,7 +198,7 @@ namespace NK2Tray
                     SaveAssignments();
                 }
             }
-            
+
         }
 
         public void SaveAssignments()
