@@ -184,7 +184,7 @@ namespace NK2Tray
                     }
                     else
                     {
-                        fader.Unassign();
+                        fader.Assign();
                     }
                 }
             }
