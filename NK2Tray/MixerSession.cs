@@ -2,6 +2,7 @@
 using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace NK2Tray
@@ -17,7 +18,7 @@ namespace NK2Tray
     /// <summary>
     /// A <c>MixerSession</c> represents a running application and all audio sessions belonging to it.
     /// </summary>
-    public class MixerSession
+    public class MixerSession : IDisposable
     {
         public string label;
         public string sessionIdentifier;
@@ -26,6 +27,9 @@ namespace NK2Tray
         public AudioDevice devices;
         public string parentDeviceIdentifier;
         public event EventHandler<VolumeChangedEventArgs> VolumeChanged;
+
+        private bool disposed = false;
+        private NAudioEventCallbacks eventsHandler;
 
         public MixerSession(AudioDevice devices, string labl, string identifier, List<AudioSessionControl> sessions, SessionType sesType)
         {
@@ -57,17 +61,10 @@ namespace NK2Tray
 
         private void SetEventHandlers()
         {
-            Console.WriteLine("SET_EVENT_HANDLERS for " + this.label);
-            NAudioEventCallbacks handler = new NAudioEventCallbacks(this);
-            // AudioSessionEventsCallback client = new AudioSessionEventsCallback(handler);
+            eventsHandler = new NAudioEventCallbacks(this);
 
             foreach (var session in audioSessions)
-            {
-                Console.WriteLine("SUB-SET_EVENT_HANDLERS " + session.DisplayName);
-                session.RegisterEventClient(handler);
-            }
-
-            // newSession.RegisterAudioSessionNotification(client);
+                session.RegisterEventClient(eventsHandler);
         }
 
         public bool IsDead()
@@ -346,32 +343,66 @@ namespace NK2Tray
 
         public class NAudioEventCallbacks : IAudioSessionEventsHandler
         {
-            private MixerSession mixerSession;
+            private MixerSession _mixerSession;
+            private VolumeChangedEventArgs _latestVolumeArgs;
+            private readonly System.Timers.Timer _throttleTimer;
 
             public NAudioEventCallbacks(MixerSession mixerSession)
             {
-                this.mixerSession = mixerSession;
+                Console.WriteLine("Starting event handler: " + mixerSession.label);
+                _mixerSession = mixerSession;
+                _throttleTimer = new System.Timers.Timer(2000);
+                _throttleTimer.Elapsed += _throttleTimer_Elapsed;
             }
 
             public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
-
             public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
-
             public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
-
             public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
-
             public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
-
             public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
+            public void OnVolumeChanged(float volume, bool isMuted) => ThrottleVolumeChange(volume, isMuted);
 
-            public void OnVolumeChanged(float volume, bool isMuted)
+            private void ThrottleVolumeChange(float volume, bool isMuted)
             {
-                Console.WriteLine(mixerSession.label + " OnVolumeChanged " + volume + " " + isMuted);
+                _latestVolumeArgs = new VolumeChangedEventArgs() { volume = volume, isMuted = isMuted };
+                if (_throttleTimer.Enabled) return;
 
-                VolumeChangedEventArgs args = new VolumeChangedEventArgs() { volume = volume, isMuted = isMuted };
-                mixerSession.OnVolumeChanged(args);
+                Console.WriteLine(_mixerSession.label + " " + " OnVolumeChanged " + volume + " " + isMuted);
+                SendVolumeChange();
+                _throttleTimer.Start();
             }
+            private void _throttleTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+            {
+                _throttleTimer.Stop();
+                SendVolumeChange();
+            }
+
+            private void SendVolumeChange()
+            {
+                if (_latestVolumeArgs == null) return;
+                _mixerSession.OnVolumeChanged(_latestVolumeArgs);
+                _latestVolumeArgs = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed) return;
+
+            if (!disposing)
+            {
+                foreach (var session in audioSessions)
+                    session.UnRegisterEventClient(eventsHandler);
+            }
+
+            disposed = true;
         }
     }
 

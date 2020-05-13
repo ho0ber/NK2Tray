@@ -1,5 +1,4 @@
 ﻿using NAudio.Midi;
-using NK2Tray.utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -60,7 +59,8 @@ namespace NK2Tray
         private bool selectLight = false;
         private bool muteLight = false;
         private bool recordLight = false;
-        private ThrottledEventHandler<VolumeChangedEventArgs> volumeChangedHandler;
+        // private ThrottledEventHandler<VolumeChangedEventArgs> volumeChangedHandler;
+        // private EventHandler<VolumeChangedEventArgs> volumeChangedHandler;
 
         public int faderNumber;
         public FaderDef faderDef;
@@ -82,7 +82,8 @@ namespace NK2Tray
             faderNumber = faderNum;
             faderDef = parent.DefaultFaderDef;
             SetCurve(1f);
-            volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
+            // volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
+            // volumeChangedHandler = new EventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged);
         }
 
         public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
@@ -92,7 +93,7 @@ namespace NK2Tray
             faderNumber = faderNum;
             faderDef = _faderDef;
             SetCurve(1f);
-            volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
+            // volumeChangedHandler = new ThrottledEventHandler<VolumeChangedEventArgs>(MixerSession_VolumeChanged, TimeSpan.FromMilliseconds(100));
         }
 
         public void SetCurve(float _pow)
@@ -128,6 +129,7 @@ namespace NK2Tray
 
         public void Assign(MixerSession mixerSession)
         {
+            // if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
             assigned = true;
             assignment = mixerSession;
             identifier = mixerSession.sessionIdentifier;
@@ -138,7 +140,7 @@ namespace NK2Tray
             SetMuteLight(mixerSession.GetMute());
 
             // Subscribe to mixer session volume changes
-            mixerSession.VolumeChanged += volumeChangedHandler;
+            mixerSession.VolumeChanged += MixerSession_VolumeChanged;
 
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, mixerSession.GetVolume());
@@ -146,13 +148,18 @@ namespace NK2Tray
 
         private void MixerSession_VolumeChanged(object sender, VolumeChangedEventArgs e)
         {
-            parent.SetVolumeIndicator(this.faderNumber, e.volume);
-            SetMuteLight(e.isMuted);
+            var faders = GetMatchingFaders();
+
+            foreach (var fader in faders)
+            {
+                fader.parent.SetVolumeIndicator(fader.faderNumber, e.volume);
+                fader.SetMuteLight(e.isMuted);
+            }
         }
 
         public void AssignInactive(string ident)
         {
-            if (assignment != null) assignment.VolumeChanged -= volumeChangedHandler;
+            if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
             identifier = ident;
             convertToApplicationPath(identifier);
             assigned = false;
@@ -163,7 +170,7 @@ namespace NK2Tray
 
         public void Unassign()
         {
-            if (assignment != null) assignment.VolumeChanged -= volumeChangedHandler;
+            if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
             assigned = false;
             assignment = null;
             SetSelectLight(false);

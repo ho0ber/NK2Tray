@@ -61,8 +61,20 @@ namespace NK2Tray
                 return mixerSessionListCache;
             }
 
+            var oldMixerSessionListCache = mixerSessionListCache;
             mixerSessionListCache = GetMixerSessions();
             currentCacheDate = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+
+            /*
+            if (oldMixerSessionListCache != null)
+            {
+                foreach (var mixerSession in oldMixerSessionListCache)
+                {
+                    mixerSession.Dispose();
+                }
+            }
+            */
+
             return mixerSessionListCache;
         }
 
