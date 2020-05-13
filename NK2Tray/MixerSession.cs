@@ -24,7 +24,8 @@ namespace NK2Tray
         public List<AudioSessionControl> audioSessions;
         public SessionType sessionType;
         public AudioDevice devices;
-        public String parentDeviceIdentifier;
+        public string parentDeviceIdentifier;
+        public event EventHandler<VolumeChangedEventArgs> VolumeChanged;
 
         public MixerSession(AudioDevice devices, string labl, string identifier, List<AudioSessionControl> sessions, SessionType sesType)
         {
@@ -34,6 +35,7 @@ namespace NK2Tray
             audioSessions = sessions;
             sessionType = sesType;
             label = labl;
+            SetEventHandlers();
         }
 
         public MixerSession(String deviceIdentifier, AudioDevice devices, string labl, SessionType sesType)
@@ -49,6 +51,23 @@ namespace NK2Tray
                 label = "Focus";
             else
                 label = devices.GetDeviceByIdentifier(deviceIdentifier).FriendlyName + ": " + labl;
+
+            SetEventHandlers();
+        }
+
+        private void SetEventHandlers()
+        {
+            Console.WriteLine("SET_EVENT_HANDLERS for " + this.label);
+            NAudioEventCallbacks handler = new NAudioEventCallbacks(this);
+            // AudioSessionEventsCallback client = new AudioSessionEventsCallback(handler);
+
+            foreach (var session in audioSessions)
+            {
+                Console.WriteLine("SUB-SET_EVENT_HANDLERS " + session.DisplayName);
+                session.RegisterEventClient(handler);
+            }
+
+            // newSession.RegisterAudioSessionNotification(client);
         }
 
         public bool IsDead()
@@ -319,5 +338,46 @@ namespace NK2Tray
                 )
             );
         }
+
+        protected virtual void OnVolumeChanged(VolumeChangedEventArgs e)
+        {
+            VolumeChanged?.Invoke(this, e);
+        }
+
+        public class NAudioEventCallbacks : IAudioSessionEventsHandler
+        {
+            private MixerSession mixerSession;
+
+            public NAudioEventCallbacks(MixerSession mixerSession)
+            {
+                this.mixerSession = mixerSession;
+            }
+
+            public void OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex) { Console.WriteLine("OnChannelVolumeChanged"); }
+
+            public void OnDisplayNameChanged(string displayName) { Console.WriteLine("OnDisplayNameChanged"); }
+
+            public void OnGroupingParamChanged(ref Guid groupingId) { Console.WriteLine("OnGroupingParamChanged"); }
+
+            public void OnIconPathChanged(string iconPath) { Console.WriteLine("OnIconPathChanged"); }
+
+            public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason) { Console.WriteLine("OnSessionDisconnected"); }
+
+            public void OnStateChanged(AudioSessionState state) { Console.WriteLine("OnStateChanged"); }
+
+            public void OnVolumeChanged(float volume, bool isMuted)
+            {
+                Console.WriteLine(mixerSession.label + " OnVolumeChanged " + volume + " " + isMuted);
+
+                VolumeChangedEventArgs args = new VolumeChangedEventArgs() { volume = volume, isMuted = isMuted };
+                mixerSession.OnVolumeChanged(args);
+            }
+        }
+    }
+
+    public class VolumeChangedEventArgs : EventArgs
+    {
+        public float volume { get; set; }
+        public bool isMuted { get; set; }
     }
 }
