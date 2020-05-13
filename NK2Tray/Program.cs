@@ -21,6 +21,7 @@ namespace NK2Tray
 
         private Dispatcher _workerDispatcher;
         private Thread _workerThread;
+        private AudioDeviceWatcher audioDeviceWatcher;
 
         public SysTrayApp()
         {
@@ -53,6 +54,7 @@ namespace NK2Tray
 
         private Boolean SetupDevice()
         {
+            audioDeviceWatcher = new AudioDeviceWatcher();
             audioDevices = new AudioDevice();
 
             midiDevice = new NanoKontrol2(audioDevices);
