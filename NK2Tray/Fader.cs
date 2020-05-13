@@ -64,8 +64,8 @@ namespace NK2Tray
 
         public int faderNumber;
         public FaderDef faderDef;
-        public MixerSession assignment;
-        public bool assigned;
+        public Assignment assignment;
+        public bool assigned => (assignment != null);
         public MidiOut midiOut;
         public MidiDevice parent;
         public string identifier;
@@ -127,6 +127,7 @@ namespace NK2Tray
             SetRecordLight(false);
         }
 
+        /*
         public void Assign(MixerSession mixerSession)
         {
             // if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
@@ -144,6 +145,32 @@ namespace NK2Tray
 
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, mixerSession.GetVolume());
+        }
+        */
+
+        public void Assign(MMDevice device)
+        {
+            assignment = new Assignment(parent.audioDeviceWatcher, device);
+            RefreshStatus();
+        }
+
+        public void Assign(string sessionId)
+        {
+            assignment = new Assignment(parent.audioDeviceWatcher, sessionId);
+            RefreshStatus();
+        }
+
+        public void Assign()
+        {
+            assignment = null;
+            ResetLights();
+        }
+
+        public void RefreshStatus()
+        {
+            SetSelectLight(assigned);
+            SetRecordLight(false);
+            SetMuteLight(assigned ? assignment.GetMute() : false);
         }
 
         private void MixerSession_VolumeChanged(object sender, VolumeChangedEventArgs e)
