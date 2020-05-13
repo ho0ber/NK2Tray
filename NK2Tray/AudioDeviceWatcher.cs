@@ -355,4 +355,10 @@ namespace NK2Tray
             }
         }
     }
+
+    public class VolumeChangedEventArgs : EventArgs
+    {
+        public float volume { get; set; }
+        public bool isMuted { get; set; }
+    }
 }
