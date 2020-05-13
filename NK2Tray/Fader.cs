@@ -184,6 +184,7 @@ namespace NK2Tray
             }
         }
 
+        /*
         public void AssignInactive(string ident)
         {
             if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
@@ -194,7 +195,9 @@ namespace NK2Tray
             SetRecordLight(true);
             SetMuteLight(false);
         }
+        */
 
+        /*
         public void Unassign()
         {
             if (assignment != null) assignment.VolumeChanged -= MixerSession_VolumeChanged;
@@ -208,6 +211,7 @@ namespace NK2Tray
             if (faderDef.delta)
                 parent.SetVolumeIndicator(faderNumber, -1);
         }
+        */
 
         private void convertToApplicationPath(string ident)
         {
@@ -300,6 +304,7 @@ namespace NK2Tray
             return 0;
         }
 
+        /*
         public List<Fader> GetMatchingFaders()
         {
             MixerSession focusMixerSession = null;
@@ -369,6 +374,7 @@ namespace NK2Tray
 
             return new List<Fader>();
         }
+        */
 
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
@@ -376,6 +382,7 @@ namespace NK2Tray
             {
                 SetHandling(true);
 
+                /*
                 //if loaded inactive, search again
                 if (!assigned && identifier != null && !identifier.Equals(""))
                 {
@@ -385,6 +392,7 @@ namespace NK2Tray
                         assigned = true;
                     }
                 }
+                */
 
                 // Fader match
                 if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
