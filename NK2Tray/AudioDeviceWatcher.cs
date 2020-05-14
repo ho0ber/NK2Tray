@@ -47,6 +47,8 @@ namespace NK2Tray
         public Dictionary<MMDevice, string> QuickDeviceIds = new Dictionary<MMDevice, string>();
         public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
         public MidiDevice MidiDevice;
+        public EventHandler<SessionVolumeChangedEventArgs> OnSessionVolumeChange;
+        public EventHandler<DeviceVolumeChangedEventArgs> OnDeviceVolumeChange;
 
         public AudioDeviceWatcher()
         {
@@ -106,7 +108,13 @@ namespace NK2Tray
         // This needs throttling like the session volume control.
         private void AudioEndpointVolume_OnVolumeNotification(MMDevice device, AudioVolumeNotificationData data)
         {
-            Console.WriteLine("MASTER Changing volume of {0} to {1}. Muted? {2}", QuickDeviceNames[device], data.MasterVolume, data.Muted);
+            var eventArgs = new DeviceVolumeChangedEventArgs(){
+                device = device,
+                isMuted = data.Muted,
+                volume = data.MasterVolume
+            };
+
+            OnDeviceVolumeChange?.Invoke(this, eventArgs);
         }
 
         private string GetSessionId(AudioSessionControl session)
@@ -154,7 +162,7 @@ namespace NK2Tray
             if (!Sessions.ContainsKey(id)) Sessions[id] = new List<AudioSessionControl>();
             if (Sessions[id].Contains(session)) return;
 
-            sessionEventMap[session] = new SessionNotificationClient(this, device, session);
+            sessionEventMap[session] = new SessionNotificationClient(this, device, id, session);
             session.RegisterEventClient(sessionEventMap[session]);
             Sessions[id].Add(session);
         }
@@ -303,16 +311,23 @@ namespace NK2Tray
     {
         private AudioDeviceWatcher _audioDeviceWatcher;
         private MMDevice _device;
+        private string _sessionId;
         private AudioSessionControl _session;
         private VolumeChangedEventArgs _latestVolumeArgs;
         private readonly System.Timers.Timer _throttleTimer;
         private static readonly double throttleMs = 50;
         private readonly object throttleLock = new object();
 
-        public SessionNotificationClient(AudioDeviceWatcher audioDeviceWatcher, MMDevice device, AudioSessionControl session)
+        public SessionNotificationClient(
+            AudioDeviceWatcher audioDeviceWatcher,
+            MMDevice device,
+            string sessionId,
+            AudioSessionControl session
+        )
         {
             _audioDeviceWatcher = audioDeviceWatcher;
             _device = device;
+            _sessionId = sessionId;
             _session = session;
             _throttleTimer = new System.Timers.Timer(SessionNotificationClient.throttleMs);
             _throttleTimer.Elapsed += _throttleTimer_Elapsed;
@@ -339,8 +354,14 @@ namespace NK2Tray
             lock (throttleLock)
             {
                 if (_latestVolumeArgs == null) return;
-                // _mixerSession.OnVolumeChanged(_latestVolumeArgs);
-                Console.WriteLine("Changing volume of {0} to {1}. Muted? {2}", _session.DisplayName, _latestVolumeArgs.volume, _latestVolumeArgs.isMuted);
+
+                var eventArgs = new SessionVolumeChangedEventArgs(){
+                    sessionId = _sessionId,
+                    isMuted = _latestVolumeArgs.isMuted,
+                    volume = _latestVolumeArgs.volume
+                };
+
+                _audioDeviceWatcher.OnSessionVolumeChange?.Invoke(_audioDeviceWatcher, eventArgs);
                 _latestVolumeArgs = null;
             }
         }

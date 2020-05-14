@@ -8,12 +8,14 @@ using static NAudio.CoreAudioApi.AudioSessionManager;
 
 namespace NK2Tray
 {
-    public class Assignment
+    public class Assignment : IDisposable
     {
+        private bool disposed = false;
         private readonly MMDevice device;
         private readonly string sessionId;
         private readonly AudioDeviceWatcher audioDeviceWatcher;
 
+        public Fader fader;
         public string uid; // A unique ID that can be used for this device/application
         public string Label;
 
@@ -23,6 +25,7 @@ namespace NK2Tray
             this.device = device;
             this.Label = audioDeviceWatcher.QuickDeviceNames[device];
             this.uid = this.audioDeviceWatcher.QuickDeviceIds[this.device];
+            this.SetupListeners();
         }
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher, string sessionId)
@@ -31,6 +34,7 @@ namespace NK2Tray
             this.sessionId = sessionId;
             this.Label = audioDeviceWatcher.Sessions[sessionId].First().DisplayName;
             this.uid = sessionId;
+            this.SetupListeners();
         }
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher)
@@ -38,6 +42,31 @@ namespace NK2Tray
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.Label = "Focus";
             this.uid = "__FOCUS__";
+            this.SetupListeners();
+        }
+
+        private void SetupListeners ()
+        {
+            if (this.device != null) this.audioDeviceWatcher.OnDeviceVolumeChange += OnDeviceVolumeChange;
+            if (this.sessionId != null) this.audioDeviceWatcher.OnSessionVolumeChange += OnSessionVolumeChange;
+        }
+
+        private void OnDeviceVolumeChange (object sender, DeviceVolumeChangedEventArgs e)
+        {
+            if (fader == null) return;
+            if (device != e.device) return;
+
+            fader.SetVolumeIndicator(e.volume);
+            fader.SetMuteLight(e.isMuted);
+        }
+
+        private void OnSessionVolumeChange (object sender, SessionVolumeChangedEventArgs e)
+        {
+            if (fader == null) return;
+            if (sessionId != e.sessionId) return;
+
+            fader.SetVolumeIndicator(e.volume);
+            fader.SetMuteLight(e.isMuted);
         }
 
         public virtual float GetVolume()
@@ -115,6 +144,25 @@ namespace NK2Tray
             }
 
             // Focus
+        }
+
+        public void Dispose ()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (disposed) return;
+
+            if (disposing)
+            {
+                if (this.device != null) this.audioDeviceWatcher.OnDeviceVolumeChange -= OnDeviceVolumeChange;
+                if (this.sessionId != null) this.audioDeviceWatcher.OnSessionVolumeChange -= OnSessionVolumeChange;
+            }
+
+            disposed = true;
         }
     }
 }
