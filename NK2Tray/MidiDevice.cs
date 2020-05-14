@@ -150,55 +150,47 @@ namespace NK2Tray
             faders.ForEach(fader => fader.SetCurve(pow));
         }
 
-        public void LoadAssignments()
+        private Assignment GetAssignmentFromUid (string uid)
         {
-            bool foundAssignments = false;
+            if (String.IsNullOrEmpty(uid)) return null;
+            if (uid == "__FOCUS__") return new Assignment(audioDeviceWatcher);
 
+            var isSession = audioDeviceWatcher.Sessions.ContainsKey(uid);
+            if (isSession) return new Assignment(audioDeviceWatcher, uid);
+
+            var device = audioDeviceWatcher.Devices.Find(d => d.ID == uid);
+            if (device != null) return new Assignment(audioDeviceWatcher, device);
+
+            return null;
+        }
+
+        // AssignInactive is missing here. Not sure how this worked.
+        public void LoadAssignments ()
+        {
             foreach (var fader in faders)
             {
-                Console.WriteLine("Getting setting: " + fader.faderNumber.ToString());
-                var ident = ConfigSaver.GetAppSettings(fader.faderNumber.ToString());
+                var uid = ConfigSaver.GetAppSettings(fader.faderNumber.ToString());
 
-                Console.WriteLine("Got setting: " + ident);
-                if (ident != null)
+                if (String.IsNullOrEmpty(uid))
                 {
-                    if (ident.Equals("__FOCUS__"))
-                    {
-                        foundAssignments = true;
-                        fader.Assign(new MixerSession("", audioDevices, "Focus", SessionType.Focus));
-                    }
-                    else if (ident.Equals("__MASTER__") || (ident.Substring(0, Math.Min(10, ident.Length)).Equals("__MASTER__")))
-                    {
-                        foundAssignments = true;
-                        MMDevice mmDevice = audioDevices.GetDeviceByIdentifier(ident.IndexOf("|") >= 0 ? ident.Substring(ident.IndexOf("|")+1) : "");
-                        fader.Assign(new MixerSession(mmDevice.ID, audioDevices, "Master", SessionType.Master));
-                    }
-                    else if (ident.Length > 0)
-                    {
-                        foundAssignments = true;
-                        var matchingSession = audioDevices.FindMixerSession(ident);
-                        if (matchingSession != null)
-                            fader.Assign(matchingSession);
-                        // else
-                            // fader.AssignInactive(ident);
-                    }
-                    else
-                    {
-                        fader.Assign();
-                    }
+                    fader.Assign();
+                    continue;
                 }
+
+                var assignment = GetAssignmentFromUid(uid);
+
+                if (assignment != null)
+                    fader.Assign(assignment);
+                else
+                    fader.Assign();
             }
 
-            // Load fader 8 as master volume control as default if no faders are set
-            if (!foundAssignments)
-            {
-                if (faders.Count > 0)
-                {
-                    faders.Last().Assign(new MixerSession(audioDevices.GetDeviceByIdentifier("").ID, audioDevices, "Master", SessionType.Master));
-                    SaveAssignments();
-                }
-            }
+            // Load last fader as master volume control as default if no faders are set.
+            // This isn't great to have this as a global setting.
+            var hasAssignments = faders.Any(fader => fader.assigned);
 
+            if (!hasAssignments && faders.Count > 0)
+                faders.Last().Assign(new Assignment(audioDeviceWatcher, audioDeviceWatcher.DefaultDevice));
         }
 
         public void SaveAssignments ()
