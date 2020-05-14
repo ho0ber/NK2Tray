@@ -148,6 +148,12 @@ namespace NK2Tray
                     continue;
                 }
 
+                if (uid == "__FOCUS__")
+                {
+                    fader.Assign(true);
+                    continue;
+                }
+
                 var assignment = GetAssignmentFromUid(uid);
 
                 if (assignment != null)
