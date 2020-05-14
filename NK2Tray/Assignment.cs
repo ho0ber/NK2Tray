@@ -51,6 +51,16 @@ namespace NK2Tray
             if (this.sessionId != null || this.uid == "__FOCUS__") this.audioDeviceWatcher.OnSessionVolumeChange += OnSessionVolumeChange;
         }
 
+        private static string GetInactiveSessionLabel (string sessionId)
+        {
+            if (String.IsNullOrEmpty(sessionId) || !sessionId.Contains(".exe")) return "";
+
+            int lastBackSlash = sessionId.LastIndexOf('\\') + 1;
+            int programNameLength = sessionId.IndexOf(".exe") - lastBackSlash;
+
+            return sessionId.Substring(lastBackSlash, programNameLength);
+        }
+
         private void OnDeviceVolumeChange (object sender, DeviceVolumeChangedEventArgs e)
         {
             if (fader == null) return;
