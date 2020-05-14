@@ -137,6 +137,13 @@ namespace NK2Tray
             return null;
         }
 
+        public string GetForegroundSessionId ()
+        {
+            var pid = WindowTools.GetForegroundPID();
+
+            return GetSessionIdByPid(pid);
+        }
+
         public void AddSession(MMDevice device, AudioSessionControl session)
         {
             if (session.State == AudioSessionState.AudioSessionStateExpired) return;
