@@ -48,7 +48,7 @@ namespace NK2Tray
         private void SetupListeners ()
         {
             if (this.device != null) this.audioDeviceWatcher.OnDeviceVolumeChange += OnDeviceVolumeChange;
-            if (this.sessionId != null) this.audioDeviceWatcher.OnSessionVolumeChange += OnSessionVolumeChange;
+            if (this.sessionId != null || this.uid == "__FOCUS__") this.audioDeviceWatcher.OnSessionVolumeChange += OnSessionVolumeChange;
         }
 
         private void OnDeviceVolumeChange (object sender, DeviceVolumeChangedEventArgs e)
@@ -63,7 +63,16 @@ namespace NK2Tray
         private void OnSessionVolumeChange (object sender, SessionVolumeChangedEventArgs e)
         {
             if (fader == null) return;
-            if (sessionId != e.sessionId) return;
+
+            if (!String.IsNullOrEmpty(this.sessionId))
+            {
+                if (this.sessionId != e.sessionId) return;
+            }
+            else
+            {
+                var sessionId = audioDeviceWatcher.GetForegroundSessionId();
+                if (sessionId != e.sessionId) return;
+            }
 
             fader.SetVolumeIndicator(e.volume);
             fader.SetMuteLight(e.isMuted);
@@ -76,6 +85,14 @@ namespace NK2Tray
 
             if (sessionId != null)
                 return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume;
+
+            if (this.uid == "__FOCUS__")
+            {
+                var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
+
+                if (!String.IsNullOrEmpty(sessionId))
+                    return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume;
+            }
 
             return 0;
         }
@@ -94,9 +111,14 @@ namespace NK2Tray
                     session.SimpleAudioVolume.Volume = targetVol
                 );
             }
-            else
+            else if (this.uid == "__FOCUS__")
             {
-                // focus
+                var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
+
+                if (!String.IsNullOrEmpty(sessionId))
+                    audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
+                        session.SimpleAudioVolume.Volume = targetVol
+                    );
             }
 
             return targetVol;
@@ -116,22 +138,32 @@ namespace NK2Tray
             if (sessionId != null)
                 return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute;
 
+            if (this.uid == "__FOCUS__")
+            {
+                var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
+
+                if (!String.IsNullOrEmpty(sessionId))
+                    return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute;
+            }
+
             return false;
         }
         public virtual bool ToggleMute()
         {
             var targetStatus = !GetMute();
-            SetMute(targetStatus);
 
-            return targetStatus;
+            return SetMute(targetStatus);
         }
-        public virtual void SetMute(bool muted)
+
+        // Returns whether or not the mute status was successfully set.
+        // If it failed, it's probably because the session didn't exist.
+        public virtual bool SetMute(bool muted)
         {
             if (device != null)
             {
                 device.AudioEndpointVolume.Mute = muted;
 
-                return;
+                return true;
             }
 
             if (sessionId != null)
@@ -140,10 +172,24 @@ namespace NK2Tray
                     session.SimpleAudioVolume.Mute = muted
                 );
 
-                return;
+                return true;
             }
 
-            // Focus
+            if (this.uid == "__FOCUS__")
+            {
+                var sessionId = audioDeviceWatcher.GetForegroundSessionId();
+
+                if (!String.IsNullOrEmpty(sessionId))
+                {
+                    audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
+                        session.SimpleAudioVolume.Mute = muted
+                    );
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void Dispose ()
@@ -159,7 +205,7 @@ namespace NK2Tray
             if (disposing)
             {
                 if (this.device != null) this.audioDeviceWatcher.OnDeviceVolumeChange -= OnDeviceVolumeChange;
-                if (this.sessionId != null) this.audioDeviceWatcher.OnSessionVolumeChange -= OnSessionVolumeChange;
+                if (this.sessionId != null || this.uid == "__FOCUS__") this.audioDeviceWatcher.OnSessionVolumeChange -= OnSessionVolumeChange;
             }
 
             disposed = true;

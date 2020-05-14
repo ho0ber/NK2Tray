@@ -119,7 +119,7 @@ namespace NK2Tray
 
                 // Add Focus
                 faderItem.MenuItems.Add(
-                    new MenuItem("Focus")
+                    new MenuItem("Focus", AssignFader) { Tag = new object[] { fader, null, null } }
                 );
 
                 faderItem.MenuItems.Add("-");
@@ -168,13 +168,11 @@ namespace NK2Tray
             var sessionId = (string)parsedTag[2];
 
             if (device != null)
-            {
                 fader.Assign(device);
-            }
             else if (sessionId != null)
-            {
                 fader.Assign(sessionId);
-            }
+            else
+                fader.Assign(true);
 
             midiDevice.SaveAssignments();
         }

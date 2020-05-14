@@ -149,19 +149,29 @@ namespace NK2Tray
         }
         */
 
-        public void Assign(MMDevice device)
+        // Assign a fader to an audio device
+        public void Assign (MMDevice device)
         {
             var assignment = new Assignment(parent.audioDeviceWatcher, device);
             Assign(assignment);
         }
 
-        public void Assign(string sessionId)
+        // Assign a fader to a mixer entry
+        public void Assign (string sessionId)
         {
             var assignment = new Assignment(parent.audioDeviceWatcher, sessionId);
             Assign(assignment);
         }
 
-        public void Assign(Assignment assignment)
+        // Assign a fader to the focused application
+        public void Assign (bool _)
+        {
+            var assignment = new Assignment(parent.audioDeviceWatcher);
+            Assign(assignment);
+        }
+
+        // Assign a fader to an existing assignment
+        public void Assign (Assignment assignment)
         {
             if (this.assignment != null) this.assignment.Dispose();
             assignment.fader = this;
@@ -396,8 +406,7 @@ namespace NK2Tray
                     return;
                 }
 
-                var pid = WindowTools.GetForegroundPID();
-                var sessionId = parent.audioDeviceWatcher.GetSessionIdByPid(pid);
+                var sessionId = parent.audioDeviceWatcher.GetForegroundSessionId();
 
                 if (!String.IsNullOrEmpty(sessionId))
                 {
