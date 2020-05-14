@@ -129,7 +129,7 @@ namespace NK2Tray
             var isSession = audioDeviceWatcher.Sessions.ContainsKey(uid);
             if (isSession) return new Assignment(audioDeviceWatcher, uid);
 
-            var device = audioDeviceWatcher.Devices.Find(d => d.ID == uid);
+            var device = audioDeviceWatcher.Devices.Find(d => audioDeviceWatcher.QuickDeviceIds[d] == uid);
             if (device != null) return new Assignment(audioDeviceWatcher, device);
 
             return null;
