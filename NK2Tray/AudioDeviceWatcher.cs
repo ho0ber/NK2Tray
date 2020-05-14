@@ -56,6 +56,11 @@ namespace NK2Tray
         {
             var devices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
             devices.ForEach(AddDevice);
+
+            var defaultDevice = deviceEnum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            var localDefaultDevice = devices.Find(localDev => localDev.ID == defaultDevice.ID);
+            SetDefaultDevice(localDefaultDevice);
+            defaultDevice.Dispose();
         }
 
         private void OnSessionCreated(MMDevice device, object sender, IAudioSessionControl session)
@@ -162,13 +167,17 @@ namespace NK2Tray
         public void SetDefaultDevice(string deviceId)
         {
             var device = FindDevice(deviceId);
-            if (device == null) return;
+            SetDefaultDevice(device);
+        }
 
+        public void SetDefaultDevice(MMDevice device)
+        {
             DefaultDevice = device;
         }
 
         public void AddDevice(MMDevice device)
         {
+            if (Devices.Contains(device)) return;
             SetupDevice(device);
             Devices.Add(device);
         }
