@@ -53,6 +53,23 @@ namespace NK2Tray
             if (this.sessionId != null || this.uid == "__FOCUS__") this.audioDeviceWatcher.OnSessionVolumeChange += OnSessionVolumeChange;
         }
 
+        public void LaunchApplication ()
+        {
+            if (String.IsNullOrEmpty(this.sessionId)) return;
+            if (this.sessionId.StartsWith("#")) return;
+
+            int deviceIndex = this.sessionId.IndexOf("\\Device");
+            int endIndex = this.sessionId.IndexOf("%b{");
+            var devicePath = this.sessionId.Substring(deviceIndex, endIndex - deviceIndex);
+            var appPath = DevicePathMapper.FromDevicePath(devicePath);
+
+            if (!String.IsNullOrEmpty(appPath))
+            {
+                if (WindowTools.IsProcessByNameRunning(this.Label)) return;
+                WindowTools.StartApplication(appPath);
+            }
+        }
+
         private static string GetInactiveSessionLabel (string sessionId)
         {
             if (String.IsNullOrEmpty(sessionId) || !sessionId.Contains(".exe")) return "";
