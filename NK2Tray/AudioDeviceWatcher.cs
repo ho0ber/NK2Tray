@@ -128,20 +128,13 @@ namespace NK2Tray
 
         public string GetSessionIdByPid (int pid)
         {
-            string sessionId = null;
-
             foreach (var pair in Sessions)
             {
                 var hasProcess = pair.Value.Any(session => (int)session.GetProcessID == pid);
-
-                if (hasProcess)
-                {
-                    sessionId = pair.Key;
-                    break;
-                }
+                if (hasProcess) return pair.Key;
             }
 
-            return sessionId;
+            return null;
         }
 
         public void AddSession(MMDevice device, AudioSessionControl session)
