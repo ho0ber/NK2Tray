@@ -46,7 +46,6 @@ namespace NK2Tray
         // a lot slower as a result, causing UI/performance lag.
         public Dictionary<MMDevice, string> QuickDeviceNames = new Dictionary<MMDevice, string>();
         public Dictionary<MMDevice, string> QuickDeviceIds = new Dictionary<MMDevice, string>();
-        public Dictionary<string, string> QuickProcessToSessionId = new Dictionary<string, string>();
         public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
         public MidiDevice MidiDevice;
         public EventHandler<SessionVolumeChangedEventArgs> OnSessionVolumeChange;
@@ -155,7 +154,10 @@ namespace NK2Tray
         {
             var name = process.ProcessName;
 
-            return QuickProcessToSessionId.ContainsKey(name) ? QuickProcessToSessionId[name] : null;
+            foreach (var pair in Sessions)
+                if (pair.Value.First().DisplayName.Equals(name)) return pair.Key;
+
+            return null;
         }
 
         public string GetForegroundSessionId ()
@@ -184,9 +186,6 @@ namespace NK2Tray
             if (session.DisplayName == null || session.DisplayName == "")
                 session.DisplayName = process != null ? process.ProcessName : id;
 
-            // Push to map for easy access
-            QuickProcessToSessionId[process.ProcessName] = id;
-
             // Push
             if (!Sessions.ContainsKey(id)) Sessions[id] = new List<AudioSessionControl>();
             if (Sessions[id].Contains(session)) return;
@@ -204,17 +203,7 @@ namespace NK2Tray
             var id = GetSessionId(session);
 
             Sessions[id].Remove(session);
-
-            if (Sessions[id].Count == 0)
-            {
-                QuickProcessToSessionId
-                    .Where(pair => pair.Value == id)
-                    .Select(pair => pair.Key)
-                    .ToList()
-                    .ForEach(processName => QuickProcessToSessionId.Remove(processName));
-
-                Sessions.Remove(id);
-            }
+            if (Sessions[id].Count == 0) Sessions.Remove(id);
         }
 
         private void DisposeDevice(MMDevice device)
