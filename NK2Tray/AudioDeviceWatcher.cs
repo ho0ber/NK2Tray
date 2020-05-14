@@ -157,6 +157,9 @@ namespace NK2Tray
 
             // Let go of device name
             QuickDeviceNames.Remove(device);
+
+            // Dispose
+            device.Dispose();
         }
 
         public MMDevice FindDevice(string deviceId)
