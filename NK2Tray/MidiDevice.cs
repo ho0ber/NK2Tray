@@ -85,45 +85,16 @@ namespace NK2Tray
 
         public virtual void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
         {
-            //WindowTools.Dump(e.MidiEvent);
-
             foreach (var fader in faders)
             {
                 fader.HandleEvent(e);
                 fader.SetHandling(false);
             }
 
-            //ControlChangeEvent midiController = null;
-            //
-            //try
-            //{
-            //    midiController = (ControlChangeEvent)e.MidiEvent;
-            //}
-            //catch (System.InvalidCastException exc)
-            //{
-            //    return;
-            //}
-            //
-            //if (midiController == null)
-            //    return;
-            ////key UP...!
-            //if (midiController.ControllerValue == 0)
-            //    return;
-            //
-            //var obj = buttonsMappingTable[(int)midiController.Controller];
-            //if (obj != null)
-            //{
-            //    Button button = (Button)obj;
-            //    button.HandleEvent(e, this);
-            //    button.SetHandling(false);
-            //}
-            //else
+            foreach (var button in buttons)
             {
-                foreach (var button in buttons)
-                {
-                    button.HandleEvent(e, this);
-                    button.SetHandling(false);
-                }
+                button.HandleEvent(e, this);
+                button.SetHandling(false);
             }
         }
 
