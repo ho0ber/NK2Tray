@@ -161,6 +161,12 @@ namespace NK2Tray
             RefreshStatus();
         }
 
+        public void Assign(Assignment assignment)
+        {
+            this.assignment = assignment;
+            RefreshStatus();
+        }
+
         public void Assign()
         {
             assignment = null;
