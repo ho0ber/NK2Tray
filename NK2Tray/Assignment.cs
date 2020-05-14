@@ -32,7 +32,9 @@ namespace NK2Tray
         {
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.sessionId = sessionId;
-            this.Label = audioDeviceWatcher.Sessions[sessionId].First().DisplayName;
+            this.Label = audioDeviceWatcher.Sessions.ContainsKey(sessionId)
+                ? audioDeviceWatcher.Sessions[sessionId].First().DisplayName
+                : Assignment.GetInactiveSessionLabel(this.sessionId);
             this.uid = sessionId;
             this.SetupListeners();
         }
@@ -94,14 +96,18 @@ namespace NK2Tray
                 return device.AudioEndpointVolume.MasterVolumeLevelScalar;
 
             if (sessionId != null)
-                return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume;
+                return audioDeviceWatcher.Sessions.ContainsKey(sessionId)
+                    ? audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume
+                    : 0;
 
             if (this.uid == "__FOCUS__")
             {
                 var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
 
                 if (!String.IsNullOrEmpty(sessionId))
-                    return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume;
+                    return audioDeviceWatcher.Sessions.ContainsKey(sessionId)
+                        ? audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Volume
+                        : 0;
             }
 
             return 0;
@@ -117,18 +123,20 @@ namespace NK2Tray
             }
             else if (sessionId != null)
             {
-                audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
-                    session.SimpleAudioVolume.Volume = targetVol
-                );
+                if (audioDeviceWatcher.Sessions.ContainsKey(sessionId))
+                    audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
+                        session.SimpleAudioVolume.Volume = targetVol
+                    );
             }
             else if (this.uid == "__FOCUS__")
             {
                 var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
 
                 if (!String.IsNullOrEmpty(sessionId))
-                    audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
-                        session.SimpleAudioVolume.Volume = targetVol
-                    );
+                    if (audioDeviceWatcher.Sessions.ContainsKey(sessionId))
+                        audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
+                            session.SimpleAudioVolume.Volume = targetVol
+                        );
             }
 
             return targetVol;
@@ -146,14 +154,18 @@ namespace NK2Tray
                 return device.AudioEndpointVolume.Mute;
 
             if (sessionId != null)
-                return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute;
+                return audioDeviceWatcher.Sessions.ContainsKey(sessionId)
+                    ? audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute
+                    : false;
 
             if (this.uid == "__FOCUS__")
             {
                 var sessionId = this.audioDeviceWatcher.GetForegroundSessionId();
 
                 if (!String.IsNullOrEmpty(sessionId))
-                    return audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute;
+                    return audioDeviceWatcher.Sessions.ContainsKey(sessionId)
+                        ? audioDeviceWatcher.Sessions[sessionId].First().SimpleAudioVolume.Mute
+                        : false;
             }
 
             return false;
@@ -178,6 +190,8 @@ namespace NK2Tray
 
             if (sessionId != null)
             {
+                if (!audioDeviceWatcher.Sessions.ContainsKey(sessionId)) return false;
+
                 audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
                     session.SimpleAudioVolume.Mute = muted
                 );
@@ -191,7 +205,9 @@ namespace NK2Tray
 
                 if (!String.IsNullOrEmpty(sessionId))
                 {
-                    audioDeviceWatcher.Sessions[sessionId].ForEach(session =>
+                    if (!audioDeviceWatcher.Sessions.ContainsKey(sessionId)) return false;
+
+                    audioDeviceWatcher.Sessions[sessionId]?.ForEach(session =>
                         session.SimpleAudioVolume.Mute = muted
                     );
 
