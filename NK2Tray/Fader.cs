@@ -151,26 +151,30 @@ namespace NK2Tray
 
         public void Assign(MMDevice device)
         {
-            assignment = new Assignment(parent.audioDeviceWatcher, device);
-            RefreshStatus();
+            var assignment = new Assignment(parent.audioDeviceWatcher, device);
+            Assign(assignment);
         }
 
         public void Assign(string sessionId)
         {
-            assignment = new Assignment(parent.audioDeviceWatcher, sessionId);
-            RefreshStatus();
+            var assignment = new Assignment(parent.audioDeviceWatcher, sessionId);
+            Assign(assignment);
         }
 
         public void Assign(Assignment assignment)
         {
+            if (this.assignment != null) this.assignment.Dispose();
+            assignment.fader = this;
             this.assignment = assignment;
             RefreshStatus();
         }
 
         public void Assign()
         {
-            assignment = null;
+            if (this.assignment != null) this.assignment.Dispose();
+            this.assignment = null;
             ResetLights();
+            SetVolumeIndicator(-1);
         }
 
         public void RefreshStatus()
@@ -178,6 +182,7 @@ namespace NK2Tray
             SetSelectLight(assigned);
             SetRecordLight(false);
             SetMuteLight(assigned ? assignment.GetMute() : false);
+            SetVolumeIndicator(assigned ? assignment.GetVolume() : 0);
         }
 
         /*
