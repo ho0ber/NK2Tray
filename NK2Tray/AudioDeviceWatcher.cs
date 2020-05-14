@@ -421,4 +421,14 @@ namespace NK2Tray
         public float volume { get; set; }
         public bool isMuted { get; set; }
     }
+
+    public class DeviceVolumeChangedEventArgs : VolumeChangedEventArgs
+    {
+        public MMDevice device;
+    }
+
+    public class SessionVolumeChangedEventArgs : VolumeChangedEventArgs
+    {
+        public string sessionId;
+    }
 }
