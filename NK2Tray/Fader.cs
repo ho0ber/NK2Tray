@@ -313,219 +313,95 @@ namespace NK2Tray
             return 0;
         }
 
-        /*
-        public List<Fader> GetMatchingFaders()
+        public void HandleEvent (MidiInMessageEventArgs e)
         {
-            MixerSession focusMixerSession = null;
+            if (IsHandling()) return;
+            SetHandling(true);
 
-            bool haveFocusSlider = parent.faders.Any(fader => (
-                fader.assignment != null
-                && fader.assignment.sessionType == SessionType.Focus
-            ));
-
-            if (haveFocusSlider)
+            // Try fader match
+            if (
+                assigned
+                && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride)
+            )
             {
-                int pid = WindowTools.GetForegroundPID();
-                focusMixerSession = assignment.devices.FindMixerSession(pid);
-            }
+                float newVol;
 
-            if (assignment == null)
-                return parent.faders.FindAll(fader => fader.assignment == null);
-
-            if (assignment.sessionType == SessionType.Master)
-            {
-                return parent.faders.FindAll(fader =>
+                if (faderDef.delta)
                 {
-                    if (fader == this) return true;
-                    if (fader.assignment == null) return false;
-                    if (fader.assignment.sessionType != SessionType.Master) return false;
+                    var val = GetValue(e.MidiEvent);
+                    var volNow = assignment.GetVolume();
+                    var nearestStep = steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volNow - x) }).OrderBy(x => x.Distance).First().Index;
+                    int nextStepIndex;
 
-                    return fader.assignment.parentDeviceIdentifier == assignment.parentDeviceIdentifier;
-                });
-            }
+                    var volumeGoingDown = val > faderDef.range / 2;
 
-            if (assignment.sessionType == SessionType.Focus)
-            {
-                return parent.faders.FindAll(fader =>
-                {
-                    if (fader == this) return true;
-                    if (fader.assignment == null) return false;
-                    if (fader.assignment.sessionType == SessionType.Focus) return true;
-
-                    return fader.assignment.HasCrossoverProcesses(focusMixerSession);
-                });
-            }
-
-            if (assignment.sessionType == SessionType.Application)
-            {
-                return parent.faders.FindAll(fader =>
-                {
-                    if (fader == this) return true;
-                    if (fader.assignment == null) return false;
-
-                    if (fader.assignment.sessionType == SessionType.Application)
-                        return fader.assignment.HasCrossoverProcesses(assignment);
-
-                    if (fader.assignment.sessionType == SessionType.Focus)
-                        return assignment.HasCrossoverProcesses(focusMixerSession);
-
-                    return false;
-                });
-            }
-
-            if (assignment.sessionType == SessionType.SystemSounds)
-            {
-                return parent.faders.FindAll(fader => (
-                    fader.assignment != null
-                    && fader.assignment.sessionType == SessionType.SystemSounds
-                ));
-            }
-
-            return new List<Fader>();
-        }
-        */
-
-        public bool HandleEvent(MidiInMessageEventArgs e)
-        {
-            if (!IsHandling())
-            {
-                SetHandling(true);
-
-                /*
-                //if loaded inactive, search again
-                if (!assigned && identifier != null && !identifier.Equals(""))
-                {
-                    assignment = parent.audioDevices.FindMixerSession(identifier);
-                    if (assignment != null)
-                    {
-                        assigned = true;
-                    }
-                }
-                */
-
-                // Fader match
-                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.faderCode, faderDef.faderOffset, faderDef.faderChannelOverride))
-                {
-                    if (assignment.sessionType == SessionType.Application)
-                    {
-                        MixerSession newAssignment = assignment.devices.FindMixerSession(assignment.sessionIdentifier); //update list for re-routered app, but only overrides
-                        if (newAssignment == null)                                                                      //if there is new assignments, otherwise, there is no more a inactive
-                        {                                                                                               //MixerSession to hold the label
-                            SetRecordLight(true);
-                            return true;
-                        }
-                        assignment = newAssignment;
-                    }
-
-                    float newVol;
-
-                    if (faderDef.delta)
-                    {
-                        var val = GetValue(e.MidiEvent);
-                        var volNow = assignment.GetVolume();
-                        var nearestStep = steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volNow - x) }).OrderBy(x => x.Distance).First().Index;
-                        int nextStepIndex;
-
-                        var volumeGoingDown = val > faderDef.range / 2;
-
-                        if (volumeGoingDown)
-                            nextStepIndex = Math.Max(nearestStep - 1, 0);
-                        else
-                            nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
-
-                        newVol = steps[nextStepIndex];
-                        assignment.SetVolume(newVol);
-                    }
+                    if (volumeGoingDown)
+                        nextStepIndex = Math.Max(nearestStep - 1, 0);
                     else
-                    {
-                        newVol = getVolFromStage(GetValue(e.MidiEvent));
-                        assignment.SetVolume(newVol);
-                    }
+                        nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
 
-                    if (assignment.IsDead())
-                    {
-                        SetRecordLight(true);
-
-                        return true;
-                    }
-
-                    List<Fader> fadersToAffect = GetMatchingFaders();
-                    fadersToAffect.ForEach(fader => fader.parent.SetVolumeIndicator(fader.faderNumber, newVol));
-
-                    return true;
+                    newVol = steps[nextStepIndex];
+                    assignment.SetVolume(newVol);
                 }
-
-                // Select match
-                if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
+                else
                 {
-                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
-                        return true;
-
-                    Console.WriteLine($@"Attempting to assign current window to fader {faderNumber}");
-                    if (assigned)
-                    {
-                        Assign();
-                        parent.SaveAssignments();
-                    }
-                    else
-                    {
-                        var pid = WindowTools.GetForegroundPID();
-                        var mixerSession = parent.audioDevices.FindMixerSession(pid);
-                        if (mixerSession != null)
-                        {
-                            Assign(mixerSession);
-                            parent.SaveAssignments();
-                        }
-                        else
-                            Console.WriteLine($@"MixerSession not found for pid {pid}");
-                    }
-                    return true;
+                    newVol = getVolFromStage(GetValue(e.MidiEvent));
+                    assignment.SetVolume(newVol);
                 }
 
-                // Mute match
-                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
-                {
-                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
-                        return true;
-
-                    var muteStatus = assignment.ToggleMute();
-                    SetMuteLight(muteStatus);
-
-                    if (assignment.IsDead())
-                    {
-                        SetRecordLight(true);
-
-                        return true;
-                    }
-
-                    List<Fader> fadersToAffect = GetMatchingFaders();
-                    fadersToAffect.ForEach(fader => fader.SetMuteLight(muteStatus));
-
-                    return true;
-                }
-
-                // Record match
-                if (
-                    assigned
-                    && applicationPath != null
-                    && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
-                )
-                {
-                    if (GetValue(e.MidiEvent) != 127) // Only on button-down
-                        return true;
-
-                    if (WindowTools.IsProcessByNameRunning(applicationName))
-                        SetRecordLight(false);
-                    else
-                    {
-                        WindowTools.StartApplication(applicationPath);
-                    }
-
-                    return true;
-                }
+                return;
             }
-            return false;
 
+            // Try select match
+            if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
+            {
+                // Only on button down
+                if (GetValue(e.MidiEvent) != 127) return;
+
+                if (assigned)
+                {
+                    Assign();
+                    parent.SaveAssignments();
+
+                    return;
+                }
+
+                var pid = WindowTools.GetForegroundPID();
+                var sessionId = parent.audioDeviceWatcher.GetSessionIdByPid(pid);
+
+                if (!String.IsNullOrEmpty(sessionId))
+                {
+                    Assign(sessionId);
+                    parent.SaveAssignments();
+                }
+
+                return;
+            }
+
+            // Try mute match
+            if (
+                assigned
+                && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride)
+            )
+            {
+                // Only on button down
+                if (GetValue(e.MidiEvent) != 127) return;
+
+                var muteStatus = assignment.ToggleMute();
+                SetMuteLight(muteStatus);
+
+                return;
+            }
+
+            // Try record match
+            if (
+                assigned
+                && applicationPath != null
+                && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
+            )
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public bool IsHandling()
