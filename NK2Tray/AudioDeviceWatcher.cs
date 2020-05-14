@@ -178,13 +178,19 @@ namespace NK2Tray
 
             // Get ident.
             var id = GetSessionId(session);
-            var processId = (int)session.GetProcessID;
 
             // Set name.
-            Process process = Process.GetProcessById(processId);
+            if (id.StartsWith("#"))
+                session.DisplayName = "System Sounds";
+            else if (String.IsNullOrEmpty(session.DisplayName))
+            {
+                var processId = (int)session.GetProcessID;
+                var process = Process.GetProcessById(processId);
 
-            if (session.DisplayName == null || session.DisplayName == "")
-                session.DisplayName = process != null ? process.ProcessName : id;
+                session.DisplayName = process != null
+                    ? process.ProcessName
+                    : id;
+            }
 
             // Push
             if (!Sessions.ContainsKey(id)) Sessions[id] = new List<AudioSessionControl>();
