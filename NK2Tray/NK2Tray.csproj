@@ -76,6 +76,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assignment.cs" />
     <Compile Include="AudioDeviceWatcher.cs" />
     <Compile Include="Button.cs" />
     <Compile Include="ConfigSaver.cs" />
