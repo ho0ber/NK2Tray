@@ -33,6 +33,8 @@ namespace NK2Tray
         private readonly DeviceNotificationClient deviceNotificationClient;
         // Used on each device to see created sessions
         private Dictionary<MMDevice, SessionCreatedDelegate> sessionHandlerMap = new Dictionary<MMDevice, SessionCreatedDelegate>();
+        // Used on each device to track device volume changes
+        private Dictionary<MMDevice, AudioEndpointVolumeNotificationDelegate> deviceVolumeHandlerMap = new Dictionary<MMDevice, AudioEndpointVolumeNotificationDelegate>();
         // Used per session to track activity like volume change and disconnection
         private Dictionary<AudioSessionControl, SessionNotificationClient> sessionEventMap = new Dictionary<AudioSessionControl, SessionNotificationClient>();
 
@@ -76,17 +78,33 @@ namespace NK2Tray
 
         private void SetupDevice(MMDevice device)
         {
+            // Watch created sessions
             sessionHandlerMap[device] = GetSessionCreatedHandler(device);
             device.AudioSessionManager.OnSessionCreated += sessionHandlerMap[device];
 
             // Set device name for later
             QuickDeviceNames.Add(device, device.FriendlyName);
 
+            // Watch for volume changes
+            deviceVolumeHandlerMap[device] = GetDeviceVolumeChangeHandler(device);
+            device.AudioEndpointVolume.OnVolumeNotification += deviceVolumeHandlerMap[device];
+
             for (int i = 0; i < device.AudioSessionManager.Sessions.Count; i++)
             {
                 var session = device.AudioSessionManager.Sessions[i];
                 AddSession(device, session);
             }
+        }
+
+        private AudioEndpointVolumeNotificationDelegate GetDeviceVolumeChangeHandler (MMDevice device)
+        {
+            return (AudioVolumeNotificationData data) => AudioEndpointVolume_OnVolumeNotification(device, data);
+        }
+
+        // This needs throttling like the session volume control.
+        private void AudioEndpointVolume_OnVolumeNotification(MMDevice device, AudioVolumeNotificationData data)
+        {
+            Console.WriteLine("MASTER Changing volume of {0} to {1}. Muted? {2}", QuickDeviceNames[device], data.MasterVolume, data.Muted);
         }
 
         private string GetSessionId(AudioSessionControl session)
@@ -152,8 +170,13 @@ namespace NK2Tray
 
         private void DisposeDevice(MMDevice device)
         {
+            // Remove session watcher
             device.AudioSessionManager.OnSessionCreated -= sessionHandlerMap[device];
             sessionHandlerMap.Remove(device);
+
+            // Remove volume watcher
+            device.AudioEndpointVolume.OnVolumeNotification -= deviceVolumeHandlerMap[device];
+            deviceVolumeHandlerMap.Remove(device);
 
             // Let go of device name
             QuickDeviceNames.Remove(device);
