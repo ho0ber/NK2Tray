@@ -258,6 +258,31 @@ namespace NK2Tray
             parent.SetLight(recordController, state);
         }
 
+        public float GetVolumeDisplay (float volume)
+        {
+            if (faderDef.delta)
+            {
+                var nearestStep = steps.Select((x, i) => new { Index = i, Distance = Math.Abs(volume - x) }).OrderBy(x => x.Distance).First().Index;
+
+                return steps[nearestStep];
+            }
+
+            return (float)Math.Pow(volume, pow);
+        }
+
+        public float GetVolumeDisplay ()
+        {
+            var volume = this.assigned ? this.assignment.GetVolume() : 0;
+
+            return GetVolumeDisplay(volume);
+        }
+
+        public void SetVolumeIndicator (float volume)
+        {
+            var displayVol = volume >= 0 ? GetVolumeDisplay(volume) : -1;
+            parent.SetVolumeIndicator(faderNumber, displayVol);
+        }
+
         public bool GetSelectLight() { return selectLight; }
 
         public bool GetMuteLight() { return muteLight; }
