@@ -203,22 +203,11 @@ namespace NK2Tray
 
         public void SaveAssignments()
         {
-            Console.WriteLine("Saving Assignments");
             foreach (var fader in faders)
-            {
-                if (fader.assigned)
-                {
-                    if (fader.assignment.sessionType == SessionType.Master)
-                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__MASTER__|" + fader.assignment.parentDeviceIdentifier );
-                    else if (fader.assignment.sessionType == SessionType.Focus)
-                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "__FOCUS__");
-                    else
-                        ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
-                }
-                else
-                    ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
-            }
+                ConfigSaver.AddOrUpdateAppSettings(
+                    fader.faderNumber.ToString(),
+                    fader.assigned ? fader.assignment.uid : ""
+                );
         }
-
     }
 }
