@@ -131,7 +131,7 @@ namespace NK2Tray
 
                 // Add unassign
                 faderItem.MenuItems.Add(
-                    new MenuItem("Unassign")
+                    new MenuItem("Unassign", UnassignFader) { Tag = new object[] { fader } }
                 );
 
                 return faderItem;
