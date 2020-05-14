@@ -110,9 +110,9 @@ namespace NK2Tray
             {
                 var faderItem = new MenuItem($@"Fader {fader.faderNumber + 1} - " + fader.assignment?.Label);
 
-                // Add devices
-                faderItem.MenuItems.AddRange(audioDeviceWatcher.Devices.Select(device =>
-                    new MenuItem(audioDeviceWatcher.QuickDeviceNames[device], AssignFader){ Tag = new object[]{ fader, device, null }}
+                // Add applications
+                faderItem.MenuItems.AddRange(audioDeviceWatcher.Sessions.Select(pair =>
+                    new MenuItem(pair.Value.First().DisplayName, AssignFader) { Tag = new object[] { fader, null, pair.Key } }
                 ).ToArray());
 
                 faderItem.MenuItems.Add("-");
@@ -124,10 +124,12 @@ namespace NK2Tray
 
                 faderItem.MenuItems.Add("-");
 
-                // Add applications
-                faderItem.MenuItems.AddRange(audioDeviceWatcher.Sessions.Select(pair =>
-                    new MenuItem(pair.Value.First().DisplayName, AssignFader) { Tag = new object[] { fader, null, pair.Key } }
+                // Add devices
+                faderItem.MenuItems.AddRange(audioDeviceWatcher.Devices.Select(device =>
+                    new MenuItem(audioDeviceWatcher.QuickDeviceNames[device], AssignFader){ Tag = new object[]{ fader, device, null }}
                 ).ToArray());
+
+                faderItem.MenuItems.Add("-");
 
                 // Add unassign
                 faderItem.MenuItems.Add(
