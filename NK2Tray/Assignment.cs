@@ -10,12 +10,10 @@ namespace NK2Tray
 {
     public class Assignment
     {
-        private MMDevice device;
-        private string sessionId;
-        private AudioDeviceWatcher audioDeviceWatcher;
+        private readonly MMDevice device;
+        private readonly string sessionId;
+        private readonly AudioDeviceWatcher audioDeviceWatcher;
 
-        public event EventHandler VolumeChanged;
-        public event EventHandler MuteChanged;
         public string uid; // A unique ID that can be used for this device/application
         public string Label;
 
