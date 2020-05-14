@@ -358,12 +358,17 @@ namespace NK2Tray
 
             // Try record match
             if (
-                assigned
-                && applicationPath != null
+                faderDef.recordPresent
+                && assigned
                 && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
             )
             {
-                throw new NotImplementedException();
+                // Only on button down
+                if (GetValue(e.MidiEvent) != 127) return;
+
+                assignment.LaunchApplication();
+
+                return;
             }
         }
 
