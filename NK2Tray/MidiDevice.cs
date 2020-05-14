@@ -153,7 +153,7 @@ namespace NK2Tray
                 if (assignment != null)
                     fader.Assign(assignment);
                 else
-                    fader.Assign();
+                    fader.Assign(uid);
             }
 
             // Load last fader as master volume control as default if no faders are set.
