@@ -44,6 +44,7 @@ namespace NK2Tray
         // The usual method of MMDevice.FriendlyName actually reaches out to the device and is
         // a lot slower as a result, causing UI/performance lag.
         public Dictionary<MMDevice, string> QuickDeviceNames = new Dictionary<MMDevice, string>();
+        public Dictionary<MMDevice, string> QuickDeviceIds = new Dictionary<MMDevice, string>();
         public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
         public MidiDevice MidiDevice;
 
@@ -82,8 +83,9 @@ namespace NK2Tray
             sessionHandlerMap[device] = GetSessionCreatedHandler(device);
             device.AudioSessionManager.OnSessionCreated += sessionHandlerMap[device];
 
-            // Set device name for later
+            // Set device details for later
             QuickDeviceNames.Add(device, device.FriendlyName);
+            QuickDeviceIds.Add(device, device.ID);
 
             // Watch for volume changes
             deviceVolumeHandlerMap[device] = GetDeviceVolumeChangeHandler(device);
@@ -178,8 +180,9 @@ namespace NK2Tray
             device.AudioEndpointVolume.OnVolumeNotification -= deviceVolumeHandlerMap[device];
             deviceVolumeHandlerMap.Remove(device);
 
-            // Let go of device name
+            // Let go of device details
             QuickDeviceNames.Remove(device);
+            QuickDeviceIds.Remove(device);
 
             // Dispose
             device.Dispose();
