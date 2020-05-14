@@ -126,7 +126,7 @@ namespace NK2Tray
 
                 // Add applications
                 faderItem.MenuItems.AddRange(audioDeviceWatcher.Sessions.Select(pair =>
-                    new MenuItem(pair.Value.First().DisplayName, AssignFader){ Tag = new object[] { fader, null, pair.Key }}
+                    new MenuItem(pair.Value.First().DisplayName, AssignFader) { Tag = new object[] { fader, null, pair.Key } }
                 ).ToArray());
 
                 // Add unassign
