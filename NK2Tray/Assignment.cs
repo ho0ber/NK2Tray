@@ -16,6 +16,8 @@ namespace NK2Tray
 
         public event EventHandler VolumeChanged;
         public event EventHandler MuteChanged;
+        // A unique ID that can be used for this device/application
+        public string uid;
         public string Label;
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher, MMDevice device)
@@ -23,6 +25,7 @@ namespace NK2Tray
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.device = device;
             this.Label = audioDeviceWatcher.QuickDeviceNames[device];
+            this.uid = device.ID;
         }
 
         public Assignment (AudioDeviceWatcher audioDeviceWatcher, string sessionId)
@@ -30,6 +33,14 @@ namespace NK2Tray
             this.audioDeviceWatcher = audioDeviceWatcher;
             this.sessionId = sessionId;
             this.Label = audioDeviceWatcher.Sessions[sessionId].First().DisplayName;
+            this.uid = sessionId;
+        }
+
+        public Assignment (AudioDeviceWatcher audioDeviceWatcher)
+        {
+            this.audioDeviceWatcher = audioDeviceWatcher;
+            this.Label = "Focus";
+            this.uid = "__FOCUS__";
         }
 
         public virtual float GetVolume()
