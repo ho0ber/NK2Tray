@@ -201,7 +201,7 @@ namespace NK2Tray
 
         }
 
-        public void SaveAssignments()
+        public void SaveAssignments ()
         {
             foreach (var fader in faders)
                 ConfigSaver.AddOrUpdateAppSettings(
