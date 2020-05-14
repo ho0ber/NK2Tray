@@ -37,6 +37,7 @@ namespace NK2Tray
         private Dictionary<MMDevice, AudioEndpointVolumeNotificationDelegate> deviceVolumeHandlerMap = new Dictionary<MMDevice, AudioEndpointVolumeNotificationDelegate>();
         // Used per session to track activity like volume change and disconnection
         private Dictionary<AudioSessionControl, SessionNotificationClient> sessionEventMap = new Dictionary<AudioSessionControl, SessionNotificationClient>();
+        private ProcessCache processCache = new ProcessCache(0);
 
         public MMDevice DefaultDevice;
         public List<MMDevice> Devices = new List<MMDevice>();
@@ -45,6 +46,7 @@ namespace NK2Tray
         // a lot slower as a result, causing UI/performance lag.
         public Dictionary<MMDevice, string> QuickDeviceNames = new Dictionary<MMDevice, string>();
         public Dictionary<MMDevice, string> QuickDeviceIds = new Dictionary<MMDevice, string>();
+        public Dictionary<string, string> QuickProcessToSessionId = new Dictionary<string, string>();
         public Dictionary<string, List<AudioSessionControl>> Sessions = new Dictionary<string, List<AudioSessionControl>>();
         public MidiDevice MidiDevice;
         public EventHandler<SessionVolumeChangedEventArgs> OnSessionVolumeChange;
@@ -117,6 +119,18 @@ namespace NK2Tray
             OnDeviceVolumeChange?.Invoke(this, eventArgs);
         }
 
+        private struct ProcessCache
+        {
+            public int id;
+            public Process process;
+
+            public ProcessCache (int id)
+            {
+                this.id = id;
+                this.process = Process.GetProcessById(id);
+            }
+        }
+
         private string GetSessionId(AudioSessionControl session)
         {
             var pipeLoc = session.GetSessionIdentifier.IndexOf("|");
@@ -137,11 +151,23 @@ namespace NK2Tray
             return null;
         }
 
+        public string GetSessionIdByProcess (Process process)
+        {
+            var name = process.ProcessName;
+
+            return QuickProcessToSessionId.ContainsKey(name) ? QuickProcessToSessionId[name] : null;
+        }
+
         public string GetForegroundSessionId ()
         {
             var pid = WindowTools.GetForegroundPID();
+            var sessionId = GetSessionIdByPid(pid);
+            if (!String.IsNullOrEmpty(sessionId)) return sessionId;
 
-            return GetSessionIdByPid(pid);
+            if (processCache.id != pid) processCache = new ProcessCache(pid);
+            var process = processCache.process;
+
+            return GetSessionIdByProcess(process);
         }
 
         public void AddSession(MMDevice device, AudioSessionControl session)
@@ -157,6 +183,9 @@ namespace NK2Tray
 
             if (session.DisplayName == null || session.DisplayName == "")
                 session.DisplayName = process != null ? process.ProcessName : id;
+
+            // Push to map for easy access
+            QuickProcessToSessionId[process.ProcessName] = id;
 
             // Push
             if (!Sessions.ContainsKey(id)) Sessions[id] = new List<AudioSessionControl>();
@@ -175,7 +204,17 @@ namespace NK2Tray
             var id = GetSessionId(session);
 
             Sessions[id].Remove(session);
-            if (Sessions[id].Count == 0) Sessions.Remove(id);
+
+            if (Sessions[id].Count == 0)
+            {
+                QuickProcessToSessionId
+                    .Where(pair => pair.Value == id)
+                    .Select(pair => pair.Key)
+                    .ToList()
+                    .ForEach(processName => QuickProcessToSessionId.Remove(processName));
+
+                Sessions.Remove(id);
+            }
         }
 
         private void DisposeDevice(MMDevice device)
