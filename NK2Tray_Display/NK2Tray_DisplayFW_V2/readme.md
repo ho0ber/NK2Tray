@@ -13,7 +13,7 @@
 
 ## Using
 
-After first flashing of this firmware, the device will set up his own ssid (NK2Tray-Display) to configure the connection to wifi
+After first flashing of this firmware, the device will set up his own ssid (NK2Tray-Display) to configure the connection to wifi.
 When connected, you should get pointed to the config page. if not, navigate to http://192.168.4.1
 after setting up the wifi, the device will restart and show its IP address on the displays.
 The booting up screen will disappear after 10 seconds.
