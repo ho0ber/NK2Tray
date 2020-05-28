@@ -3,6 +3,9 @@
 # NK2Tray_Display
 A simple addon for the Korg nanoKONTROL2 providing 8 tiny OLED displays to show the software that is controlled by the particular fader. The displays are controlled by a ESP8266 via an I2C multiplexer.
 
+## alternate Firmware
+alternative firmware in the Subfolder "NK2Tray_DisplayFWv2". See readme in this folder.
+
 #### The good
 * Easy to read even in daylight
 * OLED displays do not use energy when the don´t show anything, so standby is pretty low
