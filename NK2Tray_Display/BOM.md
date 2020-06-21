@@ -11,7 +11,7 @@
  3x  	NK2DisplayLatch.stl
 
 As the case and the latches do not bear any load, you can use a low infill. 25% is more than enough. Use 2-3 perimeter walls The case is designed to be printed with the face on the print bed, that should get you a nice surface to look at.
-Print the as they are designed and use supports under the overhang. Use at least 3 perimeter walls, again infill doesn´t matter that much.
+Print the latches as they are designed and use supports under the overhang. Use at least 3 perimeter walls, again infill doesn´t matter that much.
 
 
 
@@ -28,7 +28,6 @@ https://www.amazon.de/gp/product/B017C09ETS/ref=ppx_yo_dt_b_search_asin_title?ie
 
 1x Custom PCB
 Gerber_PCB_NK2Tray_Display.zip
-[As of 10.12.2019 i still have 4 bare PCBs in my drawer, contact me if you want to buy one at cost of 2.5€ + shipping]
 
 
 
