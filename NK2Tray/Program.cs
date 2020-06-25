@@ -61,7 +61,11 @@ namespace NK2Tray
                 midiDevice = new XtouchMini(audioDevices);
 
             if (!midiDevice.Found)
-                midiDevice = new EasyControl(audioDevices);
+                midiDevice = new OP1(audioDevices);
+
+             if (!midiDevice.Found)
+               midiDevice = new EasyControl(audioDevices);
+
 
             audioDevices.midiDevice = midiDevice;
 

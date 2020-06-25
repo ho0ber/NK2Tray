@@ -87,6 +87,7 @@
     <Compile Include="NanoKontrol2.cs" />
     <Compile Include="MidiDevice.cs" />
     <Compile Include="MixerSession.cs" />
+    <Compile Include="OP1.cs" />
     <Compile Include="Program.cs">
       <SubType>Form</SubType>
     </Compile>
