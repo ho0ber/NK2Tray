@@ -390,7 +390,10 @@ namespace NK2Tray
                 }
 
                 // Select match
-                if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
+                if (
+                    faderDef.selectPresent
+                    && Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride)
+                )
                 {
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
@@ -417,7 +420,11 @@ namespace NK2Tray
                 }
 
                 // Mute match
-                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
+                if (
+                    faderDef.mutePresent
+                    && assigned
+                    && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride)
+                )
                 {
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
@@ -440,7 +447,8 @@ namespace NK2Tray
 
                 // Record match
                 if (
-                    assigned
+                    faderDef.recordPresent
+                    && assigned
                     && applicationPath != null
                     && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
                 )

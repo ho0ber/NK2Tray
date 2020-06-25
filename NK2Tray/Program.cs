@@ -56,8 +56,12 @@ namespace NK2Tray
             audioDevices = new AudioDevice();
 
             midiDevice = new NanoKontrol2(audioDevices);
+
             if (!midiDevice.Found)
                 midiDevice = new XtouchMini(audioDevices);
+
+            if (!midiDevice.Found)
+                midiDevice = new EasyControl(audioDevices);
 
             audioDevices.midiDevice = midiDevice;
 

@@ -80,6 +80,7 @@
     <Compile Include="Button.cs" />
     <Compile Include="ConfigSaver.cs" />
     <Compile Include="DevicePathMapper.cs" />
+    <Compile Include="EasyControl.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="IconExtractor.cs" />
     <Compile Include="MediaTools.cs" />
