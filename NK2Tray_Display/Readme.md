@@ -16,8 +16,10 @@ alternative firmware in the Subfolder "NK2Tray_DisplayFW_v2". See readme in this
 * No fixation between the NK2 and the display yet
 
 #### The ugly
-* The shown icons are hardcoded in the arduino sketch
-* The host ip is hardcoded in the arduino sketch
+* ~~The shown icons are hardcoded in the arduino sketch~~
+* ~~The host ip is hardcoded in the arduino sketch~~
+
+  (Solved thanks to the new firmware V1 from piLo)
 
 ## How to build you own
 You will need a handfull of modules easily available online, the PCB and a few 3d printed parts.
