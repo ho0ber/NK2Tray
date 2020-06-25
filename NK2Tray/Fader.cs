@@ -251,6 +251,76 @@ namespace NK2Tray
             return 0;
         }
 
+        public List<Fader> GetMatchingFaders()
+        {
+            MixerSession focusMixerSession = null;
+
+            bool haveFocusSlider = parent.faders.Any(fader => (
+                fader.assignment != null
+                && fader.assignment.sessionType == SessionType.Focus
+            ));
+
+            if (haveFocusSlider)
+            {
+                int pid = WindowTools.GetForegroundPID();
+                focusMixerSession = assignment.devices.FindMixerSession(pid);
+            }
+
+            if (assignment == null)
+                return parent.faders.FindAll(fader => fader.assignment == null);
+
+            if (assignment.sessionType == SessionType.Master)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+                    if (fader.assignment.sessionType != SessionType.Master) return false;
+
+                    return fader.assignment.parentDeviceIdentifier == assignment.parentDeviceIdentifier;
+                });
+            }
+
+            if (assignment.sessionType == SessionType.Focus)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+                    if (fader.assignment.sessionType == SessionType.Focus) return true;
+
+                    return fader.assignment.HasCrossoverProcesses(focusMixerSession);
+                });
+            }
+
+            if (assignment.sessionType == SessionType.Application)
+            {
+                return parent.faders.FindAll(fader =>
+                {
+                    if (fader == this) return true;
+                    if (fader.assignment == null) return false;
+
+                    if (fader.assignment.sessionType == SessionType.Application)
+                        return fader.assignment.HasCrossoverProcesses(assignment);
+
+                    if (fader.assignment.sessionType == SessionType.Focus)
+                        return assignment.HasCrossoverProcesses(focusMixerSession);
+
+                    return false;
+                });
+            }
+
+            if (assignment.sessionType == SessionType.SystemSounds)
+            {
+                return parent.faders.FindAll(fader => (
+                    fader.assignment != null
+                    && fader.assignment.sessionType == SessionType.SystemSounds
+                ));
+            }
+
+            return new List<Fader>();
+        }
+
         public bool HandleEvent(MidiInMessageEventArgs e)
         {
             if (!IsHandling())
@@ -281,6 +351,8 @@ namespace NK2Tray
                         assignment = newAssignment;
                     }
 
+                    float newVol;
+
                     if (faderDef.delta)
                     {
                         var val = GetValue(e.MidiEvent);
@@ -295,24 +367,33 @@ namespace NK2Tray
                         else
                             nextStepIndex = Math.Min(nearestStep + 1, steps.Length - 1);
 
-                        var newVol = steps[nextStepIndex];
-
+                        newVol = steps[nextStepIndex];
                         assignment.SetVolume(newVol);
-                        parent.SetVolumeIndicator(faderNumber, newVol);
                     }
                     else
                     {
-                        assignment.SetVolume(getVolFromStage(GetValue(e.MidiEvent)));
+                        newVol = getVolFromStage(GetValue(e.MidiEvent));
+                        assignment.SetVolume(newVol);
                     }
 
                     if (assignment.IsDead())
+                    {
                         SetRecordLight(true);
+
+                        return true;
+                    }
+
+                    List<Fader> fadersToAffect = GetMatchingFaders();
+                    fadersToAffect.ForEach(fader => fader.parent.SetVolumeIndicator(fader.faderNumber, newVol));
 
                     return true;
                 }
 
                 // Select match
-                if (Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride))
+                if (
+                    faderDef.selectPresent
+                    && Match(faderNumber, e.MidiEvent, faderDef.selectCode, faderDef.selectOffset, faderDef.selectChannelOverride)
+                )
                 {
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
@@ -339,20 +420,35 @@ namespace NK2Tray
                 }
 
                 // Mute match
-                if (assigned && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride))
+                if (
+                    faderDef.mutePresent
+                    && assigned
+                    && Match(faderNumber, e.MidiEvent, faderDef.muteCode, faderDef.muteOffset, faderDef.muteChannelOverride)
+                )
                 {
                     if (GetValue(e.MidiEvent) != 127) // Only on button-down
                         return true;
 
-                    SetMuteLight(assignment.ToggleMute());
+                    var muteStatus = assignment.ToggleMute();
+                    SetMuteLight(muteStatus);
+
                     if (assignment.IsDead())
+                    {
                         SetRecordLight(true);
+
+                        return true;
+                    }
+
+                    List<Fader> fadersToAffect = GetMatchingFaders();
+                    fadersToAffect.ForEach(fader => fader.SetMuteLight(muteStatus));
+
                     return true;
                 }
 
                 // Record match
                 if (
-                    assigned
+                    faderDef.recordPresent
+                    && assigned
                     && applicationPath != null
                     && Match(faderNumber, e.MidiEvent, faderDef.recordCode, faderDef.recordOffset, faderDef.recordChannelOverride)
                 )

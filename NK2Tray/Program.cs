@@ -63,6 +63,10 @@ namespace NK2Tray
             if (!midiDevice.Found)
                 midiDevice = new OP1(audioDevices);
 
+             if (!midiDevice.Found)
+               midiDevice = new EasyControl(audioDevices);
+
+
             audioDevices.midiDevice = midiDevice;
 
             logarithmic = System.Convert.ToBoolean(ConfigSaver.GetAppSettings("logarithmic"));

@@ -308,5 +308,16 @@ namespace NK2Tray
 
             return targetAudioSessions.First().SimpleAudioVolume.Mute;
         }
+
+        public bool HasCrossoverProcesses(MixerSession other)
+        {
+            if (other == null) return false;
+
+            return audioSessions.Any(session =>
+                other.audioSessions.Any(otherSession =>
+                    session.GetProcessID == otherSession.GetProcessID
+                )
+            );
+        }
     }
 }
