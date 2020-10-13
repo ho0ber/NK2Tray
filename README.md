@@ -6,6 +6,11 @@ A simple system tray utility to control the Windows Audio Mixer with a Korg nano
 ## Download
 To download the latest version of NK2Tray, go to this project's [**Releases page**](https://github.com/ho0ber/NK2Tray/releases).
 
+## Problemsolving and Installation Instructions
+
+The [installation instructions](https://github.com/ho0ber/NK2Tray/wiki/Installation-Instructions) and a solution to the [most common problems}(https://github.com/ho0ber/NK2Tray/wiki/Frequent-Problems) can be found in our [WIKI](https://github.com/ho0ber/NK2Tray/wiki)
+If you cannot resolve your problems here simply ask in our [Troubleshooting Discord Channel](https://discord.gg/6ekacWc)
+
 ## Getting Involved
 To help test or contribute, I encourage you to join our discord: https://discord.gg/BtVTYxp
 
@@ -37,12 +42,10 @@ Also, I'm pretty sure I have to release this under the Ms-PL license if I want i
 - [ ] Support for common amazon clones of nanokontrol2
 - [ ] (Eventual) support for advanced control surface features (motorized faders, volume meters, scribble strips)
 
-##Currently Supported Devices
+## Currently Supported Devices
 At the moment the support for the MIDI devices is limited. It will be extended in the future.
 
-The currently supported MIDI devices are:
-* Korg nanoKONTROL2
-* Behringer Xouch Mini (only in MC Mode)
+The currently supported MIDI devices are listed in the [Device Support Matrix](https://github.com/ho0ber/NK2Tray/wiki/Device-Support-Matrix)
 
 ## Attribution & Acknowledgements
  * <img src="https://raw.githubusercontent.com/ho0ber/NK2Tray/master/NK2Tray/nk2tray.ico" height="24"> [NK2 Tray icon](NK2Tray/nk2tray.ico) courtesy of [Dave Savic](https://www.iconfinder.com/icons/2001872/blue_level_levels_mixer_settings_shadow_volume_icon)
