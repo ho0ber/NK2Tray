@@ -8,7 +8,7 @@ To download the latest version of NK2Tray, go to this project's [**Releases page
 
 ## Problemsolving and Installation Instructions
 
-The [installation instructions](https://github.com/ho0ber/NK2Tray/wiki/Installation-Instructions) and a solution to the [most common problems}(https://github.com/ho0ber/NK2Tray/wiki/Frequent-Problems) can be found in our [WIKI](https://github.com/ho0ber/NK2Tray/wiki)
+The [installation instructions](https://github.com/ho0ber/NK2Tray/wiki/Installation-Instructions) and a solution to the [most common problems](https://github.com/ho0ber/NK2Tray/wiki/Frequent-Problems) can be found in our [WIKI](https://github.com/ho0ber/NK2Tray/wiki)
 If you cannot resolve your problems here simply ask in our [Troubleshooting Discord Channel](https://discord.gg/6ekacWc)
 
 ## Getting Involved
