@@ -146,7 +146,7 @@ void webHome() {
   for (int i = 0; i <= 7; i++)
   {
     message += "<td class='left' colspan='2'>Display "+ String(i) + ": </td><td align='center' colspan='3'><select name='displayconfig"+String(i)+"' id='"+String(i)+"'>\n";
-    for (int x = 0; x <= 12; x++)
+    for (int x = 0; x <= 17; x++)
     {
       message += "<option value='"+String(x)+"'";
       if (display[i] == x) {
