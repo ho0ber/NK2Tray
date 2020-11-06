@@ -40,7 +40,7 @@ uint8_t MAC_array[6];                         // Char Array for MAC Adress
 char chartmp[50];                             // CharTemp for converting Strings to CharArrays
 
 int display[] = { 0,0,0,0,0,0,0,0};           // Which Disp show what - default value
-String icons[] = { " - ", "WinLogo", "ChromeLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "SpotifyLogo", "PlexLogo", "Focus", "MicLogo", "Misc", "Master", "Gaming" }; //Possible Values for Icons
+String icons[] = { " - ", "WinLogo", "ChromeLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "SpotifyLogo", "PlexLogo", "Focus", "MicLogo", "Misc", "Master", "Gaming", "TeamsLogo", "OperaGXLogo", "WoWLogo", "Empty", "YTMusicLogo" }; //Possible Values for Icons
 
 // Function for initializing I2C buses using TCA9548A I2C Multiplexer
 void tcaselect(uint8_t i2c_bus) 
@@ -106,7 +106,27 @@ void set_display(int display, int icon)
           break;
         case 12:
           ssd1306_printFixed(45,  56, "Gaming", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, gamingLogo); 
+          ssd1306_drawBitmap(32, 0, 64, 56, gamingLogo);
+          break;
+        case 13:
+          ssd1306_printFixed(49,  56, "Teams", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, teamsLogo);
+          break;
+        case 14:
+          ssd1306_printFixed(42,  56, "OperaGX", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, operagxLogo);
+          break;
+        case 15:
+          ssd1306_printFixed(54,  56, "WoW", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, wowLogo);
+          break;
+        case 16:
+          ssd1306_printFixed(45,  56, "", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, emptynoLogo);
+          break;
+        case 17:
+          ssd1306_printFixed(40,  56, "YT-Music", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, ytmusicLogo);        
       }
 }
 
@@ -198,13 +218,18 @@ void setup()
   for (int i = 0; i <= 7; i++)
   {
     tcaselect(i);
+    delay(10);
     ssd1306_128x64_i2c_init();
+    delay(10);
     ssd1306_setFixedFont(ssd1306xled_font6x8);
   }
 
   clear_screens();
   
   tcaselect(0);
+  delay(10);
+  ssd1306_128x64_i2c_init();
+  delay(10);
   ssd1306_drawBitmap(32, 0, 64, 64, piloLogo);
   tcaselect(1);
   ssd1306_printFixed(34, 32, "Booting...", STYLE_NORMAL);
