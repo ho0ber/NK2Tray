@@ -40,7 +40,7 @@ uint8_t MAC_array[6];                         // Char Array for MAC Adress
 char chartmp[50];                             // CharTemp for converting Strings to CharArrays
 
 int display[] = { 0,0,0,0,0,0,0,0};           // Which Disp show what - default value
-String icons[] = { "Empty", "Not Used", "ChromeLogo", "EdgeLogo", "FirefoxLogo", "OperaGXLogo", "SafariLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "PlexLogo", "SpotifyLogo", "YTMusicLogo", "TeamsLogo", "MicLogo", "WoWLogo", "WinLogo", "Gaming", "Focus", "Master", "Misc" }; //Possible Values for Icons
+String icons[] = { "Empty", "Unassigned", "ChromeLogo", "EdgeLogo", "FirefoxLogo", "OperaGXLogo", "SafariLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "PlexLogo", "SpotifyLogo", "YTMusicLogo", "TeamsLogo", "MicLogo", "WoWLogo", "WinLogo", "Gaming", "Focus", "Master", "Misc" }; //Possible Values for Icons
 
 // Function for initializing I2C buses using TCA9548A I2C Multiplexer
 void tcaselect(uint8_t i2c_bus) 
@@ -61,7 +61,7 @@ void set_display(int display, int icon)
           ssd1306_drawBitmap(32, 0, 64, 56, emptynoLogo);
           break;
         case 1:
-          ssd1306_printFixed(38,  56, "Not Used", STYLE_NORMAL);
+          ssd1306_printFixed(36,  56, "Unassigned", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, noLogo);
           break;
         case 2:
