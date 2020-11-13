@@ -1,4 +1,4 @@
-// Display Firmware V2, made by piLo
+// Display Firmware V2, made by piLo, tweaked by ZeeuwsGamertje
 // I2C Adressen:
 // Oled: 0x78
 // Multi:0x70
@@ -40,7 +40,7 @@ uint8_t MAC_array[6];                         // Char Array for MAC Adress
 char chartmp[50];                             // CharTemp for converting Strings to CharArrays
 
 int display[] = { 0,0,0,0,0,0,0,0};           // Which Disp show what - default value
-String icons[] = { " - ", "WinLogo", "ChromeLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "SpotifyLogo", "PlexLogo", "Focus", "MicLogo", "Misc", "Master", "Gaming", "TeamsLogo", "OperaGXLogo", "WoWLogo", "Empty", "YTMusicLogo" }; //Possible Values for Icons
+String icons[] = { "Empty", "Unassigned", "ChromeLogo", "EdgeLogo", "FirefoxLogo", "OperaGXLogo", "SafariLogo", "DiscordLogo", "MumbleLogo", "TeamspeakLogo", "PlexLogo", "SpotifyLogo", "YTMusicLogo", "TeamsLogo", "MicLogo", "WoWLogo", "WinLogo", "Gaming", "Focus", "Master", "Misc" }; //Possible Values for Icons
 
 // Function for initializing I2C buses using TCA9548A I2C Multiplexer
 void tcaselect(uint8_t i2c_bus) 
@@ -57,76 +57,90 @@ void set_display(int display, int icon)
       tcaselect(display);
       switch (icon) {
         case 0: 
-          ssd1306_printFixed(62,  56, "-", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, noLogo);
+          ssd1306_printFixed(62,  56, "", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, emptynoLogo);
           break;
         case 1:
-          ssd1306_printFixed(23,  56, "System Sounds", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, WinLogo);
+          ssd1306_printFixed(36,  56, "Unassigned", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, noLogo);
           break;
         case 2:
           ssd1306_printFixed(45,  56, "Chrome", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, ChromeLogo);
           break;
         case 3:
+          ssd1306_printFixed(50,  56, "Edge", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, edgeLogo);
+          break;
+        case 4:
+          ssd1306_printFixed(42,  56, "Firefox", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, firefoxLogo);
+          break;
+        case 5:
+          ssd1306_printFixed(42,  56, "OperaGX", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, operagxLogo);
+          break;
+        case 6:
+          ssd1306_printFixed(45,  56, "Safari", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, safariLogo);
+          break;
+        case 7:
           ssd1306_printFixed(42,  56, "Discord", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, DiscordLogo);
           break;
-        case 4:
+        case 8:
           ssd1306_printFixed(45,  56, "Mumble", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, MumbleLogo);
           break;
-        case 5:
+        case 9:
           ssd1306_printFixed(38,  56, "Teamspeak", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, TeamspeakLogo);
           break;
-        case 6:
-          ssd1306_printFixed(42,  56, "Spotify", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, SpotifyLogo);
-          break;
-        case 7:
+        case 10:
           ssd1306_printFixed(50,  56, "Plex", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, plexLogo);
           break;
-        case 8:
-          ssd1306_printFixed(49,  56, "Focus", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, focusLogo);
-          break;
-        case 9:
-          ssd1306_printFixed(54,  56, "Mic", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, micLogo);
-          break;
-        case 10:
-          ssd1306_printFixed(50,  56, "Misc", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, miscLogo);
-          break;
         case 11:
-          ssd1306_printFixed(45,  56, "Master", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, masterLogo);
+          ssd1306_printFixed(42,  56, "Spotify", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, SpotifyLogo);
           break;
         case 12:
-          ssd1306_printFixed(45,  56, "Gaming", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, gamingLogo);
+          ssd1306_printFixed(40,  56, "YT-Music", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, ytmusicLogo);
           break;
         case 13:
           ssd1306_printFixed(49,  56, "Teams", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, teamsLogo);
           break;
         case 14:
-          ssd1306_printFixed(42,  56, "OperaGX", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, operagxLogo);
+          ssd1306_printFixed(54,  56, "Mic", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, micLogo);
           break;
         case 15:
           ssd1306_printFixed(54,  56, "WoW", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, wowLogo);
           break;
         case 16:
-          ssd1306_printFixed(45,  56, "", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, emptynoLogo);
+          ssd1306_printFixed(23,  56, "System Sounds", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, WinLogo);
           break;
         case 17:
-          ssd1306_printFixed(40,  56, "YT-Music", STYLE_NORMAL);
-          ssd1306_drawBitmap(32, 0, 64, 56, ytmusicLogo);        
+          ssd1306_printFixed(45,  56, "Gaming", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, gamingLogo);
+          break;        
+        case 18:
+          ssd1306_printFixed(49,  56, "Focus", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, focusLogo);
+          break;
+        case 19:
+          ssd1306_printFixed(45,  56, "Master", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, masterLogo);
+          break;
+        case 20:
+          ssd1306_printFixed(50,  56, "Misc", STYLE_NORMAL);
+          ssd1306_drawBitmap(32, 0, 64, 56, miscLogo);
+          break;
+              
       }
 }
 
@@ -226,10 +240,9 @@ void setup()
 
   clear_screens();
   
-  tcaselect(0);
-  delay(10);
   ssd1306_128x64_i2c_init();
   delay(10);
+  tcaselect(0);  
   ssd1306_drawBitmap(32, 0, 64, 64, piloLogo);
   tcaselect(1);
   ssd1306_printFixed(34, 32, "Booting...", STYLE_NORMAL);
@@ -237,12 +250,15 @@ void setup()
   ssd1306_printFixed(54, 32, "IP: ", STYLE_NORMAL);
   tcaselect(3);
   ssd1306_printFixed(20, 32, chartmp, STYLE_NORMAL);
+  tcaselect(4);
+  ssd1306_printFixed(20, 32, "NK2Tray-Display", STYLE_NORMAL);  
   tcaselect(5);
-  ssd1306_printFixed(20, 32, "NK2Tray-Display", STYLE_NORMAL);
-  tcaselect(6);
   ssd1306_printFixed(15, 32, "Firmware by piLo", STYLE_NORMAL);
+  tcaselect(6);
+  ssd1306_printFixed(0, 30, "Tweaked by", STYLE_NORMAL);
+  ssd1306_printFixed(0, 40, "ZeeuwsGamertje", STYLE_NORMAL);
   tcaselect(7);
-  ssd1306_drawBitmap(32, 0, 64, 64, piloLogo);
+  ssd1306_drawBitmap(0, 0, 128, 64, zeeuwsLogo);
   
   delay(10000);
 
