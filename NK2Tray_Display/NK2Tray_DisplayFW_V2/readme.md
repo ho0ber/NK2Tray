@@ -9,10 +9,11 @@
 - Firmware Update OTA implemented
 - Settings are stored on chip
 - Old "Ping style" got a timeout feature (variable seconds without Ping response will disable the displays)
-- more Icons added (Plex, Microphone, Speaker symbol, misc symbol, focus symbol, gaming symbol)
+- more Icons added
+- even more Icons added
+
 
 ## Using
-
 After first flashing of this firmware, the device will set up his own ssid (NK2Tray-Display) to configure the connection to wifi.
 When connected, you should get pointed to the config page. if not, navigate to http://192.168.4.1
 after setting up the wifi, the device will restart and show its IP address on the displays.
@@ -24,4 +25,25 @@ The stored settings are loaded on every bootup.
 If you experience bugs, please let me know.
 
 
- 
+## All Icons:
+Windows (for System Sounds)
+Chrome
+Discord
+Mumble
+Teamspeak
+Spotify
+Plex
+Focus (for focussed windows)
+Mic
+Master (for Master volume)
+Misc
+Gaming
+Unassigned
+Teams
+Opera GX
+World of Warcraft
+Empty (literally empty, all pixels off)
+YT-Music
+Edge
+Firefox
+Safari
