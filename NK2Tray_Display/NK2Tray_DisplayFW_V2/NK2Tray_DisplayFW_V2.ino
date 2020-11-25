@@ -93,7 +93,7 @@ void set_display(int display, int icon)
           ssd1306_drawBitmap(32, 0, 64, 56, micLogo);
           break;
         case 9:
-          ssd1306_printFixed(50,  56, "Miscellaneous", STYLE_NORMAL);
+          ssd1306_printFixed(26,  56, "Miscellaneous", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, miscLogo);
           break;
         case 10:
@@ -137,7 +137,7 @@ void set_display(int display, int icon)
           ssd1306_drawBitmap(32, 0, 64, 56, wowLogo);
           break;
         case 20:
-          ssd1306_printFixed(50,  56, "YT-Music", STYLE_NORMAL);
+          ssd1306_printFixed(40,  56, "YT-Music", STYLE_NORMAL);
           ssd1306_drawBitmap(32, 0, 64, 56, ytmusicLogo);
           break;
               
