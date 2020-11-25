@@ -26,24 +26,24 @@ If you experience bugs, please let me know.
 
 
 ## All Icons:
-- Windows (for System Sounds)
 - Chrome
 - Discord
-- Mumble
-- Teamspeak
-- Spotify
-- Plex
-- Focus (for focussed windows)
-- Mic
-- Master (for Master volume)
-- Misc
-- Gaming
-- Unassigned
-- Teams
-- Opera GX
-- World of Warcraft
-- Empty (literally empty, all pixels off)
-- YT-Music
 - Edge
+- Empty (literally empty, all pixels off)
 - Firefox
+- Focus (for focussed windows)
+- Gaming
+- Master (for Master volume)
+- Mic
+- Misc
+- Mumble
+- Opera GX
+- Plex
 - Safari
+- Spotify
+- System Sounds (Windows Logo)
+- Teams
+- Teamspeak
+- Unassigned
+- World of Warcraft
+- YT-Music
