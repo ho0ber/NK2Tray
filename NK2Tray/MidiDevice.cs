@@ -35,7 +35,25 @@ namespace NK2Tray
 
         public virtual string SearchString => "wobbo";
 
-        public virtual FaderDef DefaultFaderDef => new FaderDef(false, 1f, 1, true, true, true, 0, 0, 0, 0, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange);
+        public virtual FaderDef DefaultFaderDef =>
+            new FaderDef(
+                false,
+                1f,
+                1,
+                true,
+                true,
+                true,
+                true,
+                0,
+                0,
+                0,
+                0,
+                0,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange);
 
         public MidiDevice()
         {

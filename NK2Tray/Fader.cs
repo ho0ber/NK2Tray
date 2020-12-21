@@ -13,24 +13,29 @@ namespace NK2Tray
         public bool selectPresent;
         public bool mutePresent;
         public bool recordPresent;
+        public bool subFaderPresent;
         public int faderOffset;
         public int selectOffset;
         public int muteOffset;
         public int recordOffset;
+        public int subFaderOffset;
         public MidiCommandCode faderCode;
         public MidiCommandCode selectCode;
         public MidiCommandCode muteCode;
         public MidiCommandCode recordCode;
+        public MidiCommandCode subFaderCode;
         public int faderChannelOverride;
         public int selectChannelOverride;
         public int muteChannelOverride;
         public int recordChannelOverride;
+        public int subFaderChannelOverride;
 
-        public FaderDef(bool _delta, float _range, int _channel,
-            bool _selectPresent, bool _mutePresent, bool _recordPresent,
-            int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset,
-            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode,
-            int _faderChannelOverride = -1, int _selectChannelOverride = -1, int _muteChannelOverride = -1, int _recordChannelOverride = -1)
+        public FaderDef(
+            bool _delta, float _range, int _channel,
+            bool _selectPresent, bool _mutePresent, bool _recordPresent, bool _subFaderPresent,
+            int _faderOffset, int _selectOffset, int _muteOffset, int _recordOffset, int _subFaderOffset,
+            MidiCommandCode _faderCode, MidiCommandCode _selectCode, MidiCommandCode _muteCode, MidiCommandCode _recordCode, MidiCommandCode _subFaderCode,
+            int _faderChannelOverride = -1, int _selectChannelOverride = -1, int _muteChannelOverride = -1, int _recordChannelOverride = -1, int _subFaderChannelOverride = -1)
         {
             delta = _delta;
             range = _range;
@@ -38,18 +43,22 @@ namespace NK2Tray
             selectPresent = _selectPresent;
             mutePresent = _mutePresent;
             recordPresent = _recordPresent;
+            subFaderPresent = _subFaderPresent;
             faderOffset = _faderOffset;
             selectOffset = _selectOffset;
             muteOffset = _muteOffset;
             recordOffset = _recordOffset;
+            subFaderOffset = _subFaderOffset;
             faderCode = _faderCode;
             selectCode = _selectCode;
             muteCode = _muteCode;
             recordCode = _recordCode;
+            subFaderCode = _subFaderCode;
             faderChannelOverride = _faderChannelOverride;
             selectChannelOverride = _selectChannelOverride;
             muteChannelOverride = _muteChannelOverride;
             recordChannelOverride = _recordChannelOverride;
+            subFaderChannelOverride = _subFaderChannelOverride;
         }
     }
 

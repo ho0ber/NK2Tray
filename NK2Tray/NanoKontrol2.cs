@@ -15,14 +15,17 @@ namespace NK2Tray
             true,  // selectPresent
             true,  // mutePresent
             true,  // recordPresent
+            true,  // subFaderPresent
             0,     // faderOffset
             32,    // selectOffset
             48,    // muteOffset
             64,    // recordOffset
+            16,    // subFaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public NanoKontrol2(AudioDevice audioDev)
