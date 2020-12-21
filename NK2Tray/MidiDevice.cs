@@ -207,6 +207,9 @@ namespace NK2Tray
                         fader.Unassign();
                     }
                 }
+
+                var savedSubFaderPosition = ConfigSaver.GetAppSettings(fader.faderNumber.ToString() + "m");
+                fader.faderPositionMultiplier = savedSubFaderPosition != null ? float.Parse(savedSubFaderPosition) : 1;
             }            
             
             // Load fader 8 as master volume control as default if no faders are set
@@ -236,7 +239,11 @@ namespace NK2Tray
                         ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
                 }
                 else
+                {
                     ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
+                }
+
+                ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString() + "m", fader.faderPositionMultiplier.ToString());
             }
         }
 

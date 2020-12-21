@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using NAudio;
 
 namespace NK2Tray
 {
@@ -250,7 +251,19 @@ namespace NK2Tray
 
         private void OnExit(object sender, EventArgs e)
         {
-            midiDevice.ResetAllLights();
+            try
+            {
+                midiDevice.ResetAllLights();
+                midiDevice.SaveAssignments();
+            }
+            catch (MmException ex)
+            {
+                if (ex.Message.StartsWith("InvalidHandle calling midiOutShortMsg"))
+                {
+                    // Exit program safely if device was already disconnected
+                }
+            }
+
             Application.Exit();
             _workerDispatcher.InvokeShutdown();
         }
