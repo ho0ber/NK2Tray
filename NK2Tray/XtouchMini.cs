@@ -16,14 +16,17 @@ namespace NK2Tray
             true,  // selectPresent
             true,  // mutePresent
             false, // recordPresent
+            false, // subFaderPresent
             16,    // faderOffset
             32,    // selectOffset
             38,    // muteOffset
             0,     // recordOffset
+            0,     // subFaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.NoteOn,        // selectCode
             MidiCommandCode.NoteOn,        // muteCode
-            MidiCommandCode.ControlChange  // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public FaderDef FirstTwoFaderDef => new FaderDef(
@@ -33,14 +36,17 @@ namespace NK2Tray
             true,  // selectPresent
             true,  // mutePresent
             false, // recordPresent
+            false, // subFaderPresent
             16,    // faderOffset
             32,    // selectOffset
             89,    // muteOffset
             0,     // recordOffset
+            0,     // subFaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.NoteOn,        // selectCode
             MidiCommandCode.NoteOn,        // muteCode
-            MidiCommandCode.ControlChange  // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public FaderDef MasterFaderDef => new FaderDef(
@@ -50,14 +56,17 @@ namespace NK2Tray
             true,   // selectPresent
             true,   // mutePresent
             false,  // recordPresent
+            false,  // subFaderPresent
             0,      // faderOffset
             76,     // selectOffset
             77,     // muteOffset
             0,      // recordOffset
+            0,      // subFaderOffset
             MidiCommandCode.PitchWheelChange, // faderCode
             MidiCommandCode.NoteOn,           // selectCode
             MidiCommandCode.NoteOn,           // muteCode
             MidiCommandCode.ControlChange,    // recordCode
+            MidiCommandCode.ControlChange,    // subFaderCode
             9      // faderChannelOverride
         );
 
