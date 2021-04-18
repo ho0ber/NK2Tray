@@ -35,7 +35,25 @@ namespace NK2Tray
 
         public virtual string SearchString => "wobbo";
 
-        public virtual FaderDef DefaultFaderDef => new FaderDef(false, 1f, 1, true, true, true, 0, 0, 0, 0, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange, MidiCommandCode.ControlChange);
+        public virtual FaderDef DefaultFaderDef =>
+            new FaderDef(
+                false,
+                1f,
+                1,
+                true,
+                true,
+                true,
+                true,
+                0,
+                0,
+                0,
+                0,
+                0,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange,
+                MidiCommandCode.ControlChange);
 
         public MidiDevice()
         {
@@ -189,6 +207,9 @@ namespace NK2Tray
                         fader.Unassign();
                     }
                 }
+
+                var savedSubFaderPosition = ConfigSaver.GetAppSettings(fader.faderNumber.ToString() + "m");
+                fader.faderPositionMultiplier = savedSubFaderPosition != null ? float.Parse(savedSubFaderPosition) : 1;
             }            
             
             // Load fader 8 as master volume control as default if no faders are set
@@ -218,7 +239,11 @@ namespace NK2Tray
                         ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), fader.assignment.sessionIdentifier);
                 }
                 else
+                {
                     ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString(), "");
+                }
+
+                ConfigSaver.AddOrUpdateAppSettings(fader.faderNumber.ToString() + "m", fader.faderPositionMultiplier.ToString());
             }
         }
 

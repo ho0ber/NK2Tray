@@ -14,14 +14,17 @@ namespace NK2Tray
             false,  // selectPresent
             true,  // mutePresent
             false,  // recordPresent
+            false, // subfaderPresent
             14,     // faderOffset
             0,    // selectOffset
             23,    // muteOffset
             0,    // recordOffset
+            0,    // subFaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public FaderDef SecondFiveFaderDef => new FaderDef(
@@ -31,14 +34,17 @@ namespace NK2Tray
             false,  // selectPresent
             true,  // mutePresent
             false,  // recordPresent
+            false,  // subfaderPresent
             14,     // faderOffset
             0,    // selectOffset
             24,    // muteOffset
             0,    // recordOffset
+            0,    // subfaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public FaderDef KnobFaderDef => new FaderDef(
@@ -48,14 +54,17 @@ namespace NK2Tray
             true,  // selectPresent
             true,  // mutePresent
             false,  // recordPresent
+            false,  // subfaderPresent
             1,     // faderOffset
             55,    // selectOffset
             58,    // muteOffset
             0,    // recordOffset
+            0,    // subfaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public FaderDef HorizontalFaderDef => new FaderDef(
@@ -65,14 +74,17 @@ namespace NK2Tray
             true,  // selectPresent
             true,  // mutePresent
             true,  // recordPresent
+            false, // subfaderPresent
             -1,     // faderOffset
             -8,    // selectOffset
             -9,    // muteOffset
             17,    // recordOffset
+            0,     // subfaderOffset
             MidiCommandCode.ControlChange, // faderCode
             MidiCommandCode.ControlChange, // selectCode
             MidiCommandCode.ControlChange, // muteCode
-            MidiCommandCode.ControlChange // recordCode
+            MidiCommandCode.ControlChange, // recordCode
+            MidiCommandCode.ControlChange  // subFaderCode
         );
 
         public EasyControl(AudioDevice audioDev)
