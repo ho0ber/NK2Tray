@@ -7,6 +7,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using NAudio;
+using NAudio.Midi;
 
 namespace NK2Tray
 {
@@ -22,6 +23,11 @@ namespace NK2Tray
 
         private Dispatcher _workerDispatcher;
         private Thread _workerThread;
+
+        public string midiInName;
+        public string midiOutName;
+
+        public ControllerType controllerType;
 
         public SysTrayApp()
         {
@@ -56,7 +62,7 @@ namespace NK2Tray
         {
             audioDevices = new AudioDevice();
 
-            midiDevice = new NanoKontrol2(audioDevices);
+            /*midiDevice = new NanoKontrol2(audioDevices);
 
             if (!midiDevice.Found)
                 midiDevice = new XtouchMini(audioDevices);
@@ -65,7 +71,24 @@ namespace NK2Tray
                 midiDevice = new OP1(audioDevices);
 
              if (!midiDevice.Found)
-               midiDevice = new EasyControl(audioDevices);
+               midiDevice = new EasyControl(audioDevices);*/
+
+            midiInName = ConfigSaver.GetAppSettings("midiin");
+            midiOutName = ConfigSaver.GetAppSettings("midiout");
+            try
+            {
+                controllerType = (ControllerType)Enum.Parse(typeof(ControllerType), ConfigSaver.GetAppSettings("controllertype"), true);
+            }
+            catch (Exception)
+            {
+                controllerType = ControllerType.NanoKontrol2;
+            }
+            
+            if (midiInName == null) midiInName = "nanoKONTROL2";
+            if (midiOutName == null) midiOutName = "nanoKONTROL2";
+
+            if (midiDevice != null) midiDevice.Close();
+            midiDevice = new MidiDevice(audioDevices, controllerType, midiInName, midiOutName);
 
 
             audioDevices.midiDevice = midiDevice;
@@ -142,68 +165,71 @@ namespace NK2Tray
 
             MixerSession focusMixerSession;
             focusMixerSession = new MixerSession("", audioDevices, "Focus", SessionType.Focus);
-                        
+
             // Dont create context menu if no midi device is connected
-            if(!midiDevice.Found)
+            /*if(!midiDevice.Found)
             {
                 if (!SetupDevice()) // This setup call can be removed once proper lifecycle management is implemented, for now this also adds a nice way to reconnect the controller
                 {
                     MessageBox.Show("No midi device detected. Are you sure your device is plugged in correctly?");
                     return;
                 }
-            }
-                       
-            foreach (var fader in midiDevice.faders)
+            }*/
+            if (midiDevice.Found)
             {
-                MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
-                trayMenu.MenuItems.Add(faderMenu);
 
-                // Add master mixerSession to menu
-                foreach(MixerSession mixerSession in masterMixerSessionList)
+                foreach (var fader in midiDevice.faders)
                 {
-                    MenuItem masterItem = new MenuItem(mixerSession.label, AssignFader);
-                    masterItem.Tag = new object[] { fader, mixerSession };
-                    faderMenu.MenuItems.Add(masterItem);
+                    MenuItem faderMenu = new MenuItem($@"Fader {fader.faderNumber + 1} - " + getProgramLabel(fader));
+                    trayMenu.MenuItems.Add(faderMenu);
+
+                    // Add master mixerSession to menu
+                    foreach (MixerSession mixerSession in masterMixerSessionList)
+                    {
+                        MenuItem masterItem = new MenuItem(mixerSession.label, AssignFader);
+                        masterItem.Tag = new object[] { fader, mixerSession };
+                        faderMenu.MenuItems.Add(masterItem);
+                    }
+
+                    /* 
+                    // Commented out Iput device code because it breaks the session lists when input and ouput is controlled at the same time
+                    faderMenu.MenuItems.Add("-");
+
+                    foreach (MixerSession mixerSession in micMixerSessionList)
+                    {
+                        MenuItem micItem = new MenuItem(mixerSession.label, AssignFader);
+                        micItem.Tag = new object[] { fader, mixerSession };
+                        faderMenu.MenuItems.Add(micItem);
+                    }
+                    */
+
+                    faderMenu.MenuItems.Add("-");
+
+                    // Add focus mixerSession to menu                
+                    MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
+                    focusItem.Tag = new object[] { fader, focusMixerSession };
+                    faderMenu.MenuItems.Add(focusItem);
+
+                    faderMenu.MenuItems.Add("-");
+
+                    // Add application mixer sessions to each fader
+                    foreach (var mixerSession in mixerSessions)
+                    {
+                        MenuItem si = new MenuItem(mixerSession.label, AssignFader);
+                        si.Tag = new object[] { fader, mixerSession };
+                        faderMenu.MenuItems.Add(si);
+                    }
+
+                    faderMenu.MenuItems.Add("-");
+
+                    // Add unassign option
+                    MenuItem unassignItem = new MenuItem("Unassign", UnassignFader);
+                    unassignItem.Tag = new object[] { fader };
+                    faderMenu.MenuItems.Add(unassignItem);
                 }
 
-                /* 
-                // Commented out Iput device code because it breaks the session lists when input and ouput is controlled at the same time
-                faderMenu.MenuItems.Add("-");
-
-                foreach (MixerSession mixerSession in micMixerSessionList)
-                {
-                    MenuItem micItem = new MenuItem(mixerSession.label, AssignFader);
-                    micItem.Tag = new object[] { fader, mixerSession };
-                    faderMenu.MenuItems.Add(micItem);
-                }
-                */
-
-                faderMenu.MenuItems.Add("-");
-
-                // Add focus mixerSession to menu                
-                MenuItem focusItem = new MenuItem(focusMixerSession.label, AssignFader);
-                focusItem.Tag = new object[] { fader, focusMixerSession };
-                faderMenu.MenuItems.Add(focusItem);
-
-                faderMenu.MenuItems.Add("-");
-
-                // Add application mixer sessions to each fader
-                foreach (var mixerSession in mixerSessions)
-                {
-                    MenuItem si = new MenuItem(mixerSession.label, AssignFader);
-                    si.Tag = new object[] { fader, mixerSession };
-                    faderMenu.MenuItems.Add(si);
-                }
-
-                faderMenu.MenuItems.Add("-");
-
-                // Add unassign option
-                MenuItem unassignItem = new MenuItem("Unassign", UnassignFader);
-                unassignItem.Tag = new object[] { fader };
-                faderMenu.MenuItems.Add(unassignItem);                
+                trayMenu.MenuItems.Add("-");
             }
-
-            trayMenu.MenuItems.Add("-");
 
             // Add toggle option for logarithmic volume curve
             MenuItem logCheck = new MenuItem("Logarithmic", ToggleLogarithmic);
@@ -211,7 +237,47 @@ namespace NK2Tray
             trayMenu.MenuItems.Add(logCheck);
 
             trayMenu.MenuItems.Add("-");
+            MenuItem midiInDevs = trayMenu.MenuItems.Add("Midi input device");
+            for (int i = 0; i < MidiIn.NumberOfDevices; i++)
+            {
+                string name = MidiIn.DeviceInfo(i).ProductName;
+                MenuItem item = midiInDevs.MenuItems.Add(name, SetMidiInputDevice);
+                if(name == midiInName)
+                {
+                    item.Checked = true;
+                }
+            }
+
+            MenuItem midiOutDevs = trayMenu.MenuItems.Add("Midi output device");
+            for (int i = 0; i < MidiOut.NumberOfDevices; i++)
+            {
+                string name = MidiOut.DeviceInfo(i).ProductName;
+                MenuItem item = midiOutDevs.MenuItems.Add(name, SetMidiOutputDevice);
+                if (name == midiOutName)
+                {
+                    item.Checked = true;
+                }
+            }
+
+            MenuItem deviceTypeMenu = trayMenu.MenuItems.Add("Device type");
+            foreach(ControllerType ctType in (ControllerType[]) Enum.GetValues(typeof(ControllerType))){
+                string name = ctType.ToString();
+                MenuItem item = deviceTypeMenu.MenuItems.Add(name, SetDeviceType);
+                if(ctType == controllerType)
+                {
+                    item.Checked = true;
+                }
+            }
+
+
+            trayMenu.MenuItems.Add("-");
             trayMenu.MenuItems.Add("Exit", OnExit);
+        }
+
+        private void SetDeviceType(object sender, EventArgs e)
+        {
+            ConfigSaver.AddOrUpdateAppSettings("controllertype", ((MenuItem)sender).Text);
+            _workerDispatcher.Invoke(SetupDevice);
         }
 
         private void ToggleLogarithmic(object sender, EventArgs e)
@@ -224,6 +290,21 @@ namespace NK2Tray
         private void SaveLogarithmic()
         {
             midiDevice.SetCurve(logarithmic ? 2f : 1f);
+        }
+
+        private void SetMidiInputDevice(object sender, EventArgs e)
+        {
+            //((MenuItem)sender).Checked = true;
+            midiInName = ((MenuItem)sender).Text;
+            ConfigSaver.AddOrUpdateAppSettings("midiin", midiInName);
+            midiDevice.FindMidiIn(midiInName);
+        }
+
+        private void SetMidiOutputDevice(object sender, EventArgs e)
+        {
+            midiOutName = ((MenuItem)sender).Text;
+            ConfigSaver.AddOrUpdateAppSettings("midiout", midiOutName);
+            midiDevice.FindMidiOut(midiOutName);
         }
 
         private void AssignFader(object sender, EventArgs e)

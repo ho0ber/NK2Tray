@@ -5,10 +5,27 @@ using System.Linq;
 
 namespace NK2Tray
 {
-    public class NanoKontrol2 : MidiDevice
+    public class NanoKontrol2 : MidiDeviceTemplate
     {
-        public override string SearchString => "nano";
-        public override FaderDef DefaultFaderDef => new FaderDef(
+        public override bool hasLights => true;
+        public override int lightCount => 128;
+        public override MidiCommandCode lightMessageType => MidiCommandCode.ControlChange;
+        public override bool hasVolumeIndicator => false;
+
+        public override int fadersCount => 8;
+
+        public override Button[] buttons => new Button[]
+        {
+            new Button(midiDevice, ButtonType.MediaPrevious, 43, true),
+            new Button(midiDevice, ButtonType.MediaNext,     44, true),
+            new Button(midiDevice, ButtonType.MediaStop,     42, false),
+            new Button(midiDevice, ButtonType.MediaPlay,     41, true),
+            new Button(midiDevice, ButtonType.MediaRecord,   45, false)
+        };
+
+        //public override string SearchString => "nano";
+        public override FaderDef[] faderDefs => new FaderDef[]{
+            new FaderDef(
             false, // delta
             127f,   // range
             1,     // channel
@@ -26,163 +43,75 @@ namespace NK2Tray
             MidiCommandCode.ControlChange, // muteCode
             MidiCommandCode.ControlChange, // recordCode
             MidiCommandCode.ControlChange  // subFaderCode
-        );
+            )
+        };
 
-        public NanoKontrol2(AudioDevice audioDev)
+        public NanoKontrol2(MidiDevice midiDev) : base(midiDev)
         {
-            audioDevices = audioDev;
-            FindMidiIn();
-            FindMidiOut();
-            if (Found)
-            {
-                ResetAllLights();
-                InitFaders();
-                InitButtons();
-                LightShow();
-                LoadAssignments();
-                ListenForMidi();
-            }
+            
         }
 
-        public override void ResetAllLights()
+        public override void LightShow(ref List<Fader> faders)
         {
-            foreach (var i in Enumerable.Range(0, 128))
-                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
-        }
-
-        public override void SetLight(int controller, bool state)
-        {
-            midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
-        }
-
-        public override void InitFaders()
-        {
-            faders = new List<Fader>();
-            foreach (var i in Enumerable.Range(0, 8))
-            {
-                Fader fader = new Fader(this, i);
-                fader.ResetLights();
-                faders.Add(fader);
-            }
-        }
-
-        public override void InitButtons()
-        {
-            buttons = new List<Button>();
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPrevious, 43, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaNext,     44, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaStop,     42, false));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaPlay,     41, true));
-            buttons.Add(new Button(ref midiOut,  ButtonType.MediaRecord,   45, false));
-
-            buttonsMappingTable = new Hashtable();
-            foreach (var button in buttons)
-            {
-                buttonsMappingTable.Add(button.controller, button);
-            }
-        }
-
-        public override void LightShow()
-        {
-            List<LightShowBackup> lightBackups = new List<LightShowBackup>();
+            //List<LightShowBackup> lightBackups = new List<LightShowBackup>();
 
             //backup settings and turn them all off
             foreach (var fader in faders)
             {
-                lightBackups.Add(new LightShowBackup(fader));
-                fader.SetSelectLight(false);
-                fader.SetSelectLight(false);
-                fader.SetMuteLight(false);
-                fader.SetRecordLight(false);
+                //lightBackups.Add(new LightShowBackup(fader));
+                fader.SetLightTemp(false);
             }
             foreach (var button in buttons)
             {
-                lightBackups.Add(new LightShowBackup(button));
-                button.SetLight(false);
+                //lightBackups.Add(new LightShowBackup(button));
+                button.SetLightTemp(false);
             }
 
             //do light show
             int travelSpeed = 50;
             foreach (var button in buttons)
             {
-                button.SetLight(true);
+                button.SetLightTemp(true);
                 System.Threading.Thread.Sleep(travelSpeed);
-                button.SetLight(false);
+                button.SetLightTemp(false);
             }
             foreach (var fader in faders)
             {
-                fader.SetSelectLight(true);
-                fader.SetMuteLight(true);
-                fader.SetRecordLight(true);
+                fader.SetLightTemp(true);
                 System.Threading.Thread.Sleep(travelSpeed);
-                fader.SetSelectLight(false);
-                fader.SetMuteLight(false);
-                fader.SetRecordLight(false);
+                fader.SetLightTemp(false);
             }
             //reverse
             for (int i = faders.Count - 1; i >= 0; i--)
             {
                 var fader = faders[i];
-                fader.SetSelectLight(true);
-                fader.SetMuteLight(true);
-                fader.SetRecordLight(true);
+                fader.SetLightTemp(true);
                 System.Threading.Thread.Sleep(travelSpeed);
             }
-            for (int i = buttons.Count - 1; i >= 0; i--)
+            for (int i = buttons.Count() - 1; i >= 0; i--)
             {
                 var button = buttons[i];
-                button.SetLight(true);
+                button.SetLightTemp(true);
                 System.Threading.Thread.Sleep(travelSpeed);
             }
-            //flash
-            /*
-            for (int i = 2; i > 0; i--)
-            {
-                System.Threading.Thread.Sleep(travelSpeed * 2);
-
-                if (i != 3)
-                {
-                    foreach (var button in buttons)
-                    {
-                        button.SetLight(true);
-                    }
-                    foreach (var fader in faders)
-                    {
-                        fader.SetSelectLight(true);
-                        fader.SetMuteLight(true);
-                        fader.SetRecordLight(true);
-                    }
-                }
-
-                System.Threading.Thread.Sleep(travelSpeed * 2);
-
-                foreach (var button in buttons)
-                {
-                    button.SetLight(false);
-                }
-                foreach (var fader in faders)
-                {
-                    fader.SetSelectLight(false);
-                    fader.SetMuteLight(false);
-                    fader.SetRecordLight(false);
-                }
-            }
-
-            foreach (var button in buttons)
-            {
-                button.SetLight(true);
-            }
-            */
 
             //reset settings
-            foreach (var lightBackup in lightBackups)
+            /*foreach (var lightBackup in lightBackups)
             {
                 lightBackup.reset();
+            }*/
+            foreach(var fader in faders)
+            {
+                fader.refreshLights();
+            }
+            foreach(var button in buttons)
+            {
+                button.refreshLight();
             }
 
         }
 
-        private class LightShowBackup
+        /*private class LightShowBackup
         {
             private bool[] lightSettings;
             private Fader fader = null;
@@ -217,6 +146,6 @@ namespace NK2Tray
                     button.SetLight(lightSettings[0]);
                 }
             }
-        }
+        }*/
     }
 }
