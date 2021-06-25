@@ -47,7 +47,20 @@ namespace NK2Tray
             trayIcon.ContextMenu.Popup += (object sender, EventArgs e) =>
                 _workerDispatcher.Invoke(() => OnPopup(sender, e));
 
-            trayIcon.Visible = true;
+            trayIcon.Visible = true; 
+            
+            while (_workerDispatcher == null)
+            {
+
+                /*
+                 * weird threading situation.
+                 * _workerDispatcher = Dispatcher.CurrentDispatcher; and Dispatcher.Run(); must be set in another thread otherwise the gui doesn't work or the program doesn't exit cleanly.
+                 * but on faster machines we race to Invoke(SetupDevice); before the other thread has instantiated the _workerDispatcher
+                 * easy way to solve is to just wait here until _workerDispatcher is set 
+                 */
+
+                Thread.Sleep(10);
+            }
 
             _workerDispatcher.Invoke(SetupDevice);
         }
