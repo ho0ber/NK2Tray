@@ -7,9 +7,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace NK2Tray
 {
+    public enum ControllerType
+    {
+        NanoKontrol2,
+        OP1,
+        XtouchMini,
+        EasyControl
+    }
     public enum SendEvent
     {
         AssignedState,
@@ -28,14 +36,16 @@ namespace NK2Tray
         public MidiOut midiOut;
 
         public List<Fader> faders;
-        public List<Button> buttons;
-        public Hashtable buttonsMappingTable;
+        //public List<Button> buttons;
+        //public Hashtable buttonsMappingTable;
 
         public AudioDevice audioDevices;
 
-        public virtual string SearchString => "wobbo";
+        public MidiDeviceTemplate deviceTemplate;
 
-        public virtual FaderDef DefaultFaderDef =>
+        //public virtual string SearchString => "wobbo";
+
+        /*public virtual FaderDef DefaultFaderDef =>
             new FaderDef(
                 false,
                 1f,
@@ -53,21 +63,80 @@ namespace NK2Tray
                 MidiCommandCode.ControlChange,
                 MidiCommandCode.ControlChange,
                 MidiCommandCode.ControlChange,
-                MidiCommandCode.ControlChange);
+                MidiCommandCode.ControlChange);*/
 
-        public MidiDevice()
+        private bool faderSetup = false;
+
+        public float curve = 1f;
+
+        public MidiDevice(AudioDevice audioDev, ControllerType templateType, string midiInPort, string midiOutPort)
         {
-            Console.WriteLine($@"Initializing Midi Device {SearchString}");
+            Console.WriteLine($@"Initializing Midi Device {midiOutPort}");
+            audioDevices = audioDev;
+
+            FindMidiIn(midiInPort);
+            FindMidiOut(midiOutPort);
+
+            if (Found)
+            {
+                switch (templateType)
+                {
+                    case ControllerType.NanoKontrol2:
+                        deviceTemplate = new NanoKontrol2(this);
+                        break;
+                    case ControllerType.OP1:
+                        deviceTemplate = new OP1(this);
+                        break;
+                    case ControllerType.XtouchMini:
+                        deviceTemplate = new XtouchMini(this);
+                        break;
+                    case ControllerType.EasyControl:
+                        deviceTemplate = new EasyControl(this);
+                        break;
+                    default:
+                        //Oops
+                        return;
+                }
+
+                if (!faderSetup)
+                {
+                    InitFaders();
+                    faderSetup = true;
+                }
+
+                if (deviceTemplate.hasLights) ResetAllLights();
+                ResetFaders();
+                LightShow();
+                LoadAssignments();
+                ListenForMidi();
+            }
+        }
+
+        public void Close()
+        {
+            if (midiOut != null)
+            {
+                midiOut.Close();
+            }
+            if (midiIn != null)
+            {
+                midiIn.Close(); //Doesn't work for some reason
+            }
         }
 
         public bool Found => (midiIn != null && midiOut != null);
 
-        public void FindMidiIn()
+        public void FindMidiIn(string name)
         {
+            if(midiIn != null)
+            {
+                midiIn.Close(); //Doesn't work for some reason
+            }
             for (int i = 0; i < MidiIn.NumberOfDevices; i++)
             {
                 Console.WriteLine("MIDI IN: " + MidiIn.DeviceInfo(i).ProductName);
-                if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
+                //if (MidiIn.DeviceInfo(i).ProductName.ToLower().Contains(name))
+                if (MidiIn.DeviceInfo(i).ProductName.Equals(name))
                 {
                     midiIn = new MidiIn(i);
                     Console.WriteLine($@"Assigning MidiIn: {MidiIn.DeviceInfo(i).ProductName}");
@@ -76,12 +145,17 @@ namespace NK2Tray
             }
         }
 
-        public void FindMidiOut()
+        public void FindMidiOut(string name)
         {
+            if (midiOut != null)
+            {
+                midiOut.Close();
+            }
             for (int i = 0; i < MidiOut.NumberOfDevices; i++)
             {
                 Console.WriteLine("MIDI OUT: " + MidiOut.DeviceInfo(i).ProductName);
-                if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains(SearchString))
+                //if (MidiOut.DeviceInfo(i).ProductName.ToLower().Contains(name))
+                if (MidiOut.DeviceInfo(i).ProductName.Equals(name))
                 {
                     midiOut = new MidiOut(i);
                     Console.WriteLine($@"Assigning MidiOut: {MidiOut.DeviceInfo(i).ProductName}");
@@ -139,7 +213,7 @@ namespace NK2Tray
             //}
             //else
             {
-                foreach (var button in buttons)
+                foreach (var button in deviceTemplate.buttons)
                 {
                     button.HandleEvent(e, this);
                     button.SetHandling(false);
@@ -147,27 +221,83 @@ namespace NK2Tray
             }
         }
 
-        public virtual void ResetAllLights() { }
-
-        public virtual void LightShow() { }
-
-        public virtual void SetVolumeIndicator(int fader, float level) { }
-
-        public virtual void SetLight(int controller, bool state) {}
-
-        public virtual void InitFaders()
-        {
-            faders = new List<Fader>();
+        public void ResetAllLights() {
+            for (int i = 0; i < deviceTemplate.lightCount; i++)
+            {
+                midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)i, 0).GetAsShortMessage());
+            }
+            deviceTemplate.ResetSuppLights(midiOut);
         }
 
-        public virtual void InitButtons()
+        public void LightShow() {
+            if (deviceTemplate.hasLights) deviceTemplate.LightShow(ref faders);
+        }
+
+        public void SetVolumeIndicator(int faderNum, float level) {
+            if (deviceTemplate.hasVolumeIndicator)
+            {
+                if (level >= 0)
+                {
+                    var usedLevel = level;
+                    var fader = faders[faderNum];
+
+                    if (fader.faderDef.delta)
+                    {
+                        var nearestStep = fader.steps.Select((x, i) => new { Index = i, Distance = Math.Abs(level - x) }).OrderBy(x => x.Distance).First().Index;
+                        usedLevel = (float)nearestStep / (fader.steps.Length - 1);
+                    }
+
+                    var val = (int)Math.Round(usedLevel * 12) + 1 + 16 * 2;
+
+                    Console.WriteLine($@"Setting fader {fader} display to {usedLevel} ({val})");
+                    midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(faderNum + 48), val).GetAsShortMessage());
+                }
+                else
+                    midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(faderNum + 48), 0).GetAsShortMessage());
+            }
+        }
+
+        public virtual void SetLight(int controller, bool state) {
+            if (deviceTemplate.hasLights)
+            {
+                if (deviceTemplate.lightMessageType == MidiCommandCode.NoteOn)
+                {
+                    midiOut.Send(new NoteOnEvent(0, 1, controller, state ? 127 : 0, 0).GetAsShortMessage());
+                }
+                else
+                {
+                    midiOut.Send(new ControlChangeEvent(0, 1, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
+                }
+            }
+        }
+
+        public void InitFaders()
         {
-            buttons = new List<Button>();
+            faders = new List<Fader>();
+
+            for (int i = 0; i < deviceTemplate.fadersCount; i++)
+            {
+                Fader fader = new Fader(this, i, deviceTemplate.faderDefs[deviceTemplate.SelectFaderDef(i)]);
+                faders.Add(fader);
+            }
+        }
+
+        public void ResetFaders()
+        {
+            if (deviceTemplate.hasLights)
+            {
+                foreach(Fader fader in faders)
+                {
+                    fader.ResetLights();
+                    fader.SetCurve(curve);
+                }
+            }
         }
 
         public void SetCurve(float pow)
         {
-            faders.ForEach(fader => fader.SetCurve(pow));
+            curve = pow;
+            if(faderSetup) faders.ForEach(fader => fader.SetCurve(pow));
         }
 
         public void LoadAssignments()
