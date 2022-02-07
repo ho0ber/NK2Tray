@@ -1,3 +1,9 @@
+# NOTE: The group of developers for NK2Tray are largely inactive. <br> A rewrite in a language more familiar to the original developer (and thus far for likely to be maintained) is in early stages here: 
+## • [ho0ber/Havomi](https://github.com/ho0ber/havomi)
+### Also consider checking out these alternative projects:
+• [Midi Mixer](https://www.midi-mixer.com/)<br>
+• [MidiManager](https://jitse-ten-hove.itch.io/midimanager)
+
 # <img src="https://raw.githubusercontent.com/ho0ber/NK2Tray/master/NK2Tray/nk2tray.ico" height="24"> NK2Tray
 A simple system tray utility to control the Windows Audio Mixer with a Korg nanoKONTROL2 and other similar control surfaces.
 
