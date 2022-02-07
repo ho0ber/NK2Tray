@@ -1,6 +1,6 @@
 # NOTE: The group of developers for NK2Tray are largely inactive. <br> A rewrite in a language more familiar to the original developer (and thus far for likely to be maintained) is in early stages here: 
 ## • [ho0ber/Havomi](https://github.com/ho0ber/havomi)
-### Also consider checking out these alternative projects:
+### Also consider checking out these excellent alternative projects:
 • [Midi Mixer](https://www.midi-mixer.com/)<br>
 • [MidiManager](https://jitse-ten-hove.itch.io/midimanager)
 
