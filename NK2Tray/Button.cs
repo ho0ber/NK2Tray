@@ -22,25 +22,32 @@ namespace NK2Tray
         public int controller;
         public MidiCommandCode commandCode;
         public int channel;
-        public MidiOut midiOut;
+        public MidiDevice midiDevice;
 
-        public Button(ref MidiOut midiOutRef, ButtonType butType, int cont, bool initialState, MidiCommandCode code=MidiCommandCode.ControlChange)
+        public Button(MidiDevice midiDeviceRef, ButtonType butType, int cont, bool initialState, MidiCommandCode code=MidiCommandCode.ControlChange)
         {
+            midiDevice = midiDeviceRef;
             commandCode = code;
             channel = 1;
             buttonType = butType;
             controller = cont;
-            midiOut = midiOutRef;
             SetLight(initialState);
         }
 
         public void SetLight(bool state)
         {
             light = state;
-            if (commandCode == MidiCommandCode.ControlChange)
-                midiOut.Send(new ControlChangeEvent(0, channel, (MidiController)(controller), state ? 127 : 0).GetAsShortMessage());
-            else if (commandCode == MidiCommandCode.NoteOn)
-                midiOut.Send(new NoteOnEvent(0, 1, controller, state ? 127 : 0, 0).GetAsShortMessage());
+            refreshLight();
+        }
+
+        public void refreshLight()
+        {
+            midiDevice.SetLight(controller, light);
+        }
+
+        public void SetLightTemp(bool state)
+        {
+            midiDevice.SetLight(controller, state);
         }
 
         public bool HandleEvent(MidiInMessageEventArgs e, MidiDevice device)

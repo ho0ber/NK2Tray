@@ -85,14 +85,14 @@ namespace NK2Tray
         public float faderPositionMultiplier;
         private int primaryFaderHardwareValue;
 
-        public Fader(MidiDevice midiDevice, int faderNum)
+        /*public Fader(MidiDevice midiDevice, int faderNum)
         {
             parent = midiDevice;
             midiOut = midiDevice.midiOut;
             faderNumber = faderNum;
             faderDef = parent.DefaultFaderDef;
             SetCurve(1f);
-        }
+        }*/
 
         public Fader(MidiDevice midiDevice, int faderNum, FaderDef _faderDef)
         {
@@ -211,6 +211,20 @@ namespace NK2Tray
         {
             recordLight = state;
             parent.SetLight(recordController, state);
+        }
+
+        public void SetLightTemp(bool state)
+        {
+            parent.SetLight(selectController, state);
+            parent.SetLight(muteController, state);
+            parent.SetLight(recordController, state);
+        }
+
+        public void refreshLights()
+        {
+            parent.SetLight(selectController, selectLight);
+            parent.SetLight(muteController, muteLight);
+            parent.SetLight(recordController, recordLight);
         }
 
         public bool GetSelectLight() { return selectLight; }
